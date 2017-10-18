@@ -3,7 +3,9 @@ CryptoWatch lets you view the balance and worth of your cold-storage or paper-wa
 
 # Supported Coins
 BTC - Bitcoin
+
 LTC - Litecoin
+
 ETH - Ethereum
 
 # Add Addresses
