@@ -2,11 +2,11 @@
 CryptoWatch lets you view the balance and worth of your cold-storage or paper-wallet crypto coin portfolio.
 
 # Supported Coins
-BTC - Bitcoin
+* BTC - Bitcoin
 
-LTC - Litecoin
+* LTC - Litecoin
 
-ETH - Ethereum
+* ETH - Ethereum
 
 # Add Addresses
 Click on the settings drop down (3 vertical dots)
