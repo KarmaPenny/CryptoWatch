@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:weightSum="1"
+    android:paddingTop="5dp"
+    android:descendantFocusability="blocksDescendants">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="ETH"
+        android:id="@+id/coinText"
+        android:textSize="25dp"
+        android:gravity="center_vertical"
+        android:paddingLeft="5dp" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="013f07D2ad0dbA2F67800b223f78a56E616961F9"
+        android:id="@+id/address"
+        android:textSize="25dp"
+        android:maxLines="2"
+        android:minLines="2"
+        android:paddingLeft="15dp"
+        android:gravity="center_vertical" />
+</LinearLayout>
