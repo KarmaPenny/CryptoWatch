@@ -9,35 +9,35 @@ CryptoWatch lets you view the balance and worth of your cold-storage or paper-wa
 * ETH - Ethereum
 
 # Add Addresses
-Click on the settings drop down (3 vertical dots)
+1.) Click on the settings drop down (3 vertical dots)
 
-Click on addresses
+2.) Click on addresses
 
-Click on a blank space (or an existing address->add) to begin adding an address
+3.) Click on a blank space (or an existing address->add) to begin adding an address
 
-Select which type of coin the address is for
+4.) Select which type of coin the address is for
 
-Enter the address (long click to paste)
+5.) Enter the address (long click to paste)
 
-Click the Add button
+6.) Click the Add button
 
 # Delete Address
-Click on the settings drop down (3 vertical dots)
+1.) Click on the settings drop down (3 vertical dots)
 
-Click on addresses
+2.) Click on addresses
 
-Click on an address to delete
+3.) Click on an address to delete
 
-Click Delete
+4.) Click Delete
 
 # Copy Address to Clipboard
-Click on the settings drop down (3 vertical dots)
+1.) Click on the settings drop down (3 vertical dots)
 
-Click on addresses
+2.) Click on addresses
 
-Click on an address to copy
+3.) Click on an address to copy
 
-Click Copy
+4.) Click Copy
 
 # Donations
 * BTC - 3KpH3d7eBwWNihMj9Z64qNG1sjj1mLFfom
