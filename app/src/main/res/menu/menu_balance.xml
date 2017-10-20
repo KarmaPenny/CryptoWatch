@@ -1,10 +1,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".Balance">
-    <item android:id="@+id/action_refresh" android:title="Refresh"
-        android:orderInCategory="100" app:showAsAction="never" />
-    <item android:id="@+id/action_accounts" android:title="Addresses"
-        android:orderInCategory="100" app:showAsAction="never" />
-    <item android:id="@+id/action_donate" android:title="Donate"
-        android:orderInCategory="100" app:showAsAction="never" />
 </menu>

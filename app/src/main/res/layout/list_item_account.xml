@@ -4,7 +4,8 @@
     android:layout_height="wrap_content"
     android:weightSum="1"
     android:paddingTop="5dp"
-    android:descendantFocusability="blocksDescendants">
+    android:descendantFocusability="blocksDescendants"
+    android:paddingBottom="5dp">
 
     <TextView
         android:layout_width="wrap_content"
