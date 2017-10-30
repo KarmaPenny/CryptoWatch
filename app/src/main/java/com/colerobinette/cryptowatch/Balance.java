@@ -188,11 +188,13 @@ class BalanceAdapter extends BaseAdapter {
         View view = inflater.inflate(R.layout.list_item_balance, parent, false);
 
         // set the icon of the listview item
-        int icon = R.drawable.bitcoin;
+        int icon = R.drawable.btc;
         if (listing.coin == Coin.LTC) {
-            icon = R.drawable.litecoin;
+            icon = R.drawable.ltc;
         } else if (listing.coin == Coin.ETH) {
-            icon = R.drawable.ether;
+            icon = R.drawable.eth;
+        } else if (listing.coin == Coin.BCH) {
+            icon = R.drawable.bch;
         }
         ((ImageView) view.findViewById(R.id.coinIcon)).setImageResource(icon);
 
