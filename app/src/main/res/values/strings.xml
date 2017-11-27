@@ -5,10 +5,17 @@
     <string name="coin_prompt">Select Coin Type</string>
     <string name="total_balance">Total Balance:</string>
     <string-array name="coins">
+        <item>ARK - Ark</item>
         <item>BTC - Bitcoin</item>
         <item>BCH - Bitcoin Cash</item>
+        <item>DASH - Dash</item>
         <item>ETH - Ethereum</item>
+        <item>IOTA - Internet of Things Application</item>
         <item>LTC - Litecoin</item>
+        <item>XMR - Monero</item>
+        <item>XRP - Ripple</item>
+        <item>VTC - Vertcoin</item>
+        <item>ZEC - ZCash</item>
     </string-array>
     <string name="add_button">New Address</string>
 </resources>

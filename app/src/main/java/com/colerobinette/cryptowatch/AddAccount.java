@@ -22,7 +22,8 @@ public class AddAccount extends AppCompatActivity {
             if (address.startsWith("0x")) {
                 address = address.substring(2);
             }
-            String coin = coinSpinner.getSelectedItem().toString().substring(0,3);
+            String spinner = coinSpinner.getSelectedItem().toString();
+            String coin = spinner.substring(0, spinner.indexOf(" "));
             CryptoAccount account = new CryptoAccount(Coin.valueOf(coin), address);
             Balance.accounts.put(account.coin.name() + "-" + account.address, account);
 

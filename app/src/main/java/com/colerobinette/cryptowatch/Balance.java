@@ -37,7 +37,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-enum Coin {BTC, BCH, ETH, LTC}
+enum Coin {ARK, BTC, BCH, DASH, ETH, IOTA, LTC, XMR, XRP, VTC, ZEC}
 
 class CryptoAccount {
     public String address;
@@ -72,6 +72,11 @@ class CryptoAccount {
     }
 
     void Update() {
+        if (coin == Coin.ARK || coin == Coin.VTC || coin == Coin.XMR || coin == Coin.DASH || coin == Coin.IOTA || coin == Coin.XRP || coin == Coin.ZEC) {
+            balance = Double.parseDouble(address);
+            success = true;
+            return;
+        }
         try {
             URL url = new URL("https://api.blockcypher.com/v1/" + coin.name().toLowerCase() + "/main/addrs/" + address + "/balance");
             if (coin == Coin.BCH) {
@@ -195,6 +200,20 @@ class BalanceAdapter extends BaseAdapter {
             icon = R.drawable.eth;
         } else if (listing.coin == Coin.BCH) {
             icon = R.drawable.bch;
+        } else if (listing.coin == Coin.ARK) {
+            icon = R.drawable.ark;
+        } else if (listing.coin == Coin.VTC) {
+            icon = R.drawable.vtc;
+        } else if (listing.coin == Coin.XMR) {
+            icon = R.drawable.monero;
+        } else if (listing.coin == Coin.ZEC) {
+            icon = R.drawable.zcash;
+        } else if (listing.coin == Coin.IOTA) {
+            icon = R.drawable.iota;
+        } else if (listing.coin == Coin.XRP) {
+            icon = R.drawable.ripple;
+        } else if (listing.coin == Coin.DASH) {
+            icon = R.drawable.dash;
         }
         ((ImageView) view.findViewById(R.id.coinIcon)).setImageResource(icon);
 
@@ -208,9 +227,9 @@ class BalanceAdapter extends BaseAdapter {
         ((TextView) view.findViewById(R.id.coinBalance)).setText(String.valueOf(coins));
         ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", coins * listing.price));
 
-        if (coins == 0) {
-            return inflater.inflate(R.layout.list_item_null, null);
-        }
+        //if (coins == 0) {
+        //    return inflater.inflate(R.layout.list_item_null, null);
+        //}
         return view;
     }
 }
