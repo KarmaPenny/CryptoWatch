@@ -1,35 +1,32 @@
 package com.colerobinette.cryptowatch;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.text.format.DateUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.PopupMenu;
-import android.widget.TabHost;
 import android.widget.TextView;
 
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.URL;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -37,128 +34,35 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-enum Coin {ARK, BTC, BCH, DASH, ETH, IOTA, LTC, XMR, XRP, VTC, ZEC}
-
-class CryptoAccount {
-    public String address;
-    public Coin coin;
-    public double balance;
-    public boolean success;
-
-    public CryptoAccount(Coin coin, String address) {
-        this.address = address;
-        this.coin = coin;
-        this.balance = 0;
-        this.success = true;
-    }
-
-    public CryptoAccount(String fromString) {
-        String[] parts = fromString.split("-");
-        coin = Coin.valueOf(parts[0]);
-        address = parts[1];
-        balance = Double.parseDouble(parts[2]);
-        success = true;
-    }
-
-    public double Standardize(double value) {
-        if (coin == Coin.ETH) {
-            return value / 1000000000000000000d;
-        }
-        return value / 100000000d;
-    }
-
-    public String ToString() {
-        return coin.name() + "-" + address + "-" + String.valueOf(balance);
-    }
-
-    void Update() {
-        if (coin == Coin.ARK || coin == Coin.VTC || coin == Coin.XMR || coin == Coin.DASH || coin == Coin.IOTA || coin == Coin.XRP || coin == Coin.ZEC) {
-            balance = Double.parseDouble(address);
-            success = true;
-            return;
-        }
-        try {
-            URL url = new URL("https://api.blockcypher.com/v1/" + coin.name().toLowerCase() + "/main/addrs/" + address + "/balance");
-            if (coin == Coin.BCH) {
-                url = new URL("https://api.blocktrail.com/v1/bcc/address/" + address + "?api_key=a8e039afc1af0be708c4cda1db00703508c39bfc");
-            }
-            InputStream inputStream = url.openStream();
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-            String jsonString = "";
-            String line;
-            while ((line = in.readLine()) != null) {
-                jsonString += line;
-            }
-            JSONObject result = new JSONObject(jsonString);
-            balance = Standardize(result.getDouble("balance"));
-            success = true;
-        } catch (Exception e) {
-            Log.e("UpdateAccount", e.toString());
-            success = false;
-        }
-    }
-}
-
-class AccountAdapter extends BaseAdapter {
-    private LayoutInflater inflater;
-
-    public AccountAdapter(Context context) {
-        inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    }
-
-    @Override
-    public int getCount() {
-        return Balance.accounts.size();
-    }
-
-    @Override
-    public Object getItem(int index) {
-        return Balance.accounts.values().toArray()[index];
-    }
-
-    @Override
-    public long getItemId(int index) {
-        return index;
-    }
-
-    @Override
-    public View getView(final int index, View convertView, ViewGroup parent) {
-        View view = inflater.inflate(R.layout.list_item_account, parent, false);
-
-        CryptoAccount account = (CryptoAccount) getItem(index);
-
-        TextView coinText = (TextView) view.findViewById(R.id.coinText);
-        coinText.setText(account.coin.name());
-        TextView addressText = (TextView) view.findViewById(R.id.address);
-        if (!account.success) {
-            addressText.setTextColor(Color.RED);
-        }
-        addressText.setText(account.address);
-
-        return view;
-    }
-}
+enum Coin {ARK, BTC, BCH, DASH, ETH, IOTA, LTC, NEO, XMR, XRP, VTC, ZEC}
 
 class ExchangeListing {
     public Coin coin;
+    public double balance;
     public double price;
     public boolean success;
 
     public ExchangeListing(Coin coin) {
         this.coin = coin;
+        this.balance = 0;
         this.price = 0;
         success = true;
     }
 
     public ExchangeListing(String fromString) {
-        String[] parts = fromString.split("-");
+        String[] parts = fromString.split(",");
         coin = Coin.valueOf(parts[0]);
-        price = Double.parseDouble(parts[1]);
+        balance = Double.parseDouble(parts[1]);
+        price = Double.parseDouble(parts[2]);
         success = true;
     }
 
+    public double Value() {
+        return price * balance;
+    }
+
     public String ToString() {
-        return coin.name() + "-" + String.valueOf(price);
+        return coin.name() + "," + String.valueOf(balance) + "," + String.valueOf(price);
     }
 }
 
@@ -205,15 +109,17 @@ class BalanceAdapter extends BaseAdapter {
         } else if (listing.coin == Coin.VTC) {
             icon = R.drawable.vtc;
         } else if (listing.coin == Coin.XMR) {
-            icon = R.drawable.monero;
+            icon = R.drawable.xmr;
         } else if (listing.coin == Coin.ZEC) {
-            icon = R.drawable.zcash;
+            icon = R.drawable.zec;
         } else if (listing.coin == Coin.IOTA) {
             icon = R.drawable.iota;
         } else if (listing.coin == Coin.XRP) {
-            icon = R.drawable.ripple;
+            icon = R.drawable.xrp;
         } else if (listing.coin == Coin.DASH) {
             icon = R.drawable.dash;
+        } else if (listing.coin == Coin.NEO) {
+            icon = R.drawable.neo;
         }
         ((ImageView) view.findViewById(R.id.coinIcon)).setImageResource(icon);
 
@@ -223,23 +129,27 @@ class BalanceAdapter extends BaseAdapter {
         if (!listing.success) {
             ((TextView) view.findViewById(R.id.coinPrice)).setTextColor(Color.RED);
         }
-        double coins = Balance.Balance(listing.coin);
-        ((TextView) view.findViewById(R.id.coinBalance)).setText(String.valueOf(coins));
-        ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", coins * listing.price));
+        ((TextView) view.findViewById(R.id.coinBalance)).setText(String.valueOf(listing.balance));
+        ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", listing.Value()));
+        double holdingPercentage = 0;
+        if (Balance.totalValue > 0) {
+            holdingPercentage = 100 * listing.Value() / Balance.totalValue;
+        }
+        ((TextView) view.findViewById(R.id.holdingPercent)).setText(String.format("%1$,.2f", holdingPercentage) + "%");
 
-        //if (coins == 0) {
-        //    return inflater.inflate(R.layout.list_item_null, null);
-        //}
+        // don't display item if balance is 0
+//        if (listing.balance == 0) {
+//            return inflater.inflate(R.layout.list_item_null, null);
+//        }
         return view;
     }
 }
 
 public class Balance extends AppCompatActivity {
     public static BalanceAdapter balanceAdapter = null;
-    public static AccountAdapter accountAdapter = null;
     static int SelectedIndex = 0;
-    public static Map<String, CryptoAccount> accounts = new LinkedHashMap<>();
     public static Map<Coin, ExchangeListing> listings = new LinkedHashMap<>();
+    public static double totalValue = 0;
 
     public static void Load(Context context) {
         // create balance for each coin type
@@ -264,26 +174,6 @@ public class Balance extends AppCompatActivity {
         catch (Exception e) {
             Log.e("BalancesLoad", e.toString());
         }
-
-        // load accounts from file
-        try {
-            InputStream inputStream = context.openFileInput("accounts.txt");
-
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String line = "";
-                while ( (line = bufferedReader.readLine()) != null ) {
-                    CryptoAccount account = new CryptoAccount(line);
-                    accounts.put(account.coin.name() + "-" + account.address, account);
-                }
-
-                inputStream.close();
-            }
-        }
-        catch (Exception e) {
-            Log.e("AccountsLoad", e.toString());
-        }
     }
 
     public static void Save(Context context) {
@@ -297,47 +187,94 @@ public class Balance extends AppCompatActivity {
         catch (IOException e) {
             Log.e("BalancesSave", e.toString());
         }
+    }
 
-        try {
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("accounts.txt", Context.MODE_PRIVATE));
-            for (CryptoAccount account : accounts.values()) {
-                outputStreamWriter.write(account.ToString() + "\n");
-            }
-            outputStreamWriter.close();
+    public void LookupSelected() {
+        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+
+        String coinName = "bitcoin";
+        if (listing.coin == Coin.LTC) {
+            coinName = "litecoin";
+        } else if (listing.coin == Coin.ETH) {
+            coinName = "ethereum";
+        } else if (listing.coin == Coin.BCH) {
+            coinName = "bitcoin-cash";
+        } else if (listing.coin == Coin.ARK) {
+            coinName = "ark";
+        } else if (listing.coin == Coin.VTC) {
+            coinName = "vertcoin";
+        } else if (listing.coin == Coin.XMR) {
+            coinName = "monero";
+        } else if (listing.coin == Coin.ZEC) {
+            coinName = "zcash";
+        } else if (listing.coin == Coin.IOTA) {
+            coinName = "iota";
+        } else if (listing.coin == Coin.XRP) {
+            coinName = "ripple";
+        } else if (listing.coin == Coin.DASH) {
+            coinName = "dash";
         }
-        catch (IOException e) {
-            Log.e("AccountsSave", e.toString());
+
+        Intent intent= new Intent(Intent.ACTION_VIEW, Uri.parse("https://coinmarketcap.com/currencies/" + coinName + "/"));
+        startActivity(intent);
+    }
+
+    public void CloseBalanceEditBox() {
+        // disable the balance list
+        findViewById(R.id.balancesList).setEnabled(true);
+
+        // disabled the refresh button
+        findViewById(R.id.refreshButton).setEnabled(true);
+
+        // hide the edit box
+        findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.GONE);
+
+        // close keyboard
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
 
-    public static double Balance(Coin coin) {
-        double coins = 0;
-        for (CryptoAccount account : accounts.values()) {
-            if (account.coin == coin) {
-                coins += account.balance;
-            }
-        }
-        return coins;
+    public void EditSelected() {
+        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+
+        // set the edit title and erase the balance input text
+        ((TextView) findViewById(R.id.editTitle)).setText(listing.coin.name() + " Balance");
+        ((TextView) findViewById(R.id.balanceInput)).setText("");
+
+        // disable the balance list
+        findViewById(R.id.balancesList).setEnabled(false);
+
+        // disabled the refresh button
+        findViewById(R.id.refreshButton).setEnabled(false);
+
+        // show the edit box
+        findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.VISIBLE);
+
+        // show keyboard for balance input
+        EditText editText = (EditText) findViewById(R.id.balanceInput);
+        editText.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
     }
 
-    public void DeleteSelected() {
-        if (SelectedIndex < accounts.size()) {
-            CryptoAccount account = (CryptoAccount) Balance.accounts.values().toArray()[SelectedIndex];
-            accounts.remove(account.coin.name() + "-" + account.address);
-            UpdateDisplay();
-        }
+    public void SaveBalance() {
+        // update listing with new balance
+        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+        String balance = ((TextView) findViewById(R.id.balanceInput)).getText().toString();
+        listing.balance = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
+
+        // Close balance box
+        CloseBalanceEditBox();
+
+        // update listings display
+        UpdateDisplay();
     }
 
-    public void CopySelected() {
-        if (SelectedIndex < accounts.size()) {
-            CryptoAccount account = (CryptoAccount) Balance.accounts.values().toArray()[SelectedIndex];
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            clipboard.setPrimaryClip(ClipData.newPlainText(account.coin.name() + "_Address", account.address));
-        }
-    }
-
-    public void AddAccount(View v) {
-        startActivity(new Intent(this, AddAccount.class));
+    public void CancelEdit(View v) {
+        findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.GONE);
     }
 
     public void Refresh(View v) {
@@ -359,6 +296,7 @@ public class Balance extends AppCompatActivity {
             while ((line = in.readLine()) != null) {
                 jsonString += line;
             }
+            in.close();
             JSONObject result = new JSONObject(jsonString);
             for (Coin coin : Coin.values()) {
                 if (listings.containsKey(coin)) {
@@ -366,6 +304,21 @@ public class Balance extends AppCompatActivity {
                     listings.get(coin).success = true;
                 }
             }
+
+            // get iota price from special location
+            url = new URL("https://api.coinmarketcap.com/v1/ticker/iota/");
+            inputStream = url.openStream();
+            in = new BufferedReader(new InputStreamReader(inputStream));
+            jsonString = "";
+            while ((line = in.readLine()) != null) {
+                jsonString += line;
+            }
+            result = new JSONObject(jsonString.substring(2, jsonString.length() - 1));
+            if (listings.containsKey(Coin.IOTA)) {
+                listings.get(Coin.IOTA).price = result.getDouble("price_usd");
+                listings.get(Coin.IOTA).success = true;
+            }
+
         } catch (Exception e) {
             Log.e("UpdatePrices", e.toString());
             for (Coin coin : Coin.values()) {
@@ -380,16 +333,15 @@ public class Balance extends AppCompatActivity {
         // save data
         Save(this);
 
-        // update list views
-        balanceAdapter.notifyDataSetChanged();
-        accountAdapter.notifyDataSetChanged();;
-
-        // update total value
-        double totalValue = 0;
+        // Update total value
+        totalValue = 0;
         for (Coin coin : Coin.values()) {
-            totalValue += listings.get(coin).price * Balance(coin);
+            totalValue += listings.get(coin).Value();
         }
         ((TextView) findViewById(R.id.valueTotal)).setText("$" + String.format("%1$,.2f", totalValue));
+
+        // update list views
+        balanceAdapter.notifyDataSetChanged();
     }
 
     void RecordUpdateTime() {
@@ -427,7 +379,7 @@ public class Balance extends AppCompatActivity {
             return true;
         }
 
-        Date next_update = new Date(last_update.getTime() + 180000);
+        Date next_update = new Date(last_update.getTime() + 60000);
         Date now = Calendar.getInstance().getTime();
         if (now.after(next_update)) {
             return true;
@@ -440,9 +392,6 @@ public class Balance extends AppCompatActivity {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                for (CryptoAccount account : accounts.values()) {
-                    account.Update();
-                }
                 UpdatePrices();
                 return null;
             }
@@ -463,55 +412,52 @@ public class Balance extends AppCompatActivity {
         // load data from file
         Load(this);
 
-        // setup tabs
-        TabHost host = (TabHost)findViewById(R.id.tabHost);
-        host.setup();
-
-        TabHost.TabSpec spec = host.newTabSpec("Balances");
-        spec.setContent(R.id.balanceTab);
-        spec.setIndicator("Balances");
-        host.addTab(spec);
-
-        spec = host.newTabSpec("Addresses");
-        spec.setContent(R.id.addressesTab);
-        spec.setIndicator("Addresses");
-        host.addTab(spec);
-
         // setup balances list
         ListView listView = (ListView) findViewById(R.id.balancesList);
         balanceAdapter = new BalanceAdapter(this);
-        listView.setAdapter(balanceAdapter);
-
-        // setup addresses list
-        listView = (ListView) findViewById(R.id.accountsList);
-        accountAdapter = new AccountAdapter(this);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
                 SelectedIndex = position;
-
-                PopupMenu popup = new PopupMenu(Balance.this, v);
-                popup.getMenuInflater().inflate(R.menu.menu_list_item_account, popup.getMenu());
-                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    public boolean onMenuItemClick(MenuItem item) {
-                        int id = item.getItemId();
-
-                        if (id == R.id.deleteButton) {
-                            DeleteSelected();
-                        } else if (id == R.id.copyButton) {
-                            CopySelected();
-                        }
-
-                        return true;
-                    }
-                });
-
-                popup.show();
+                LookupSelected();
             }
         });
 
-        listView.setAdapter(accountAdapter);
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapter, View v, int position, long id) {
+                SelectedIndex = position;
+                EditSelected();
+                return true;
+            }
+        });
+
+        listView.setAdapter(balanceAdapter);
+
+        // setup edit box
+        BalanceEditText balanceInput = (BalanceEditText) findViewById(R.id.balanceInput);
+
+        // save balance and close input box when submit is pressed on keyboard
+        balanceInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    SaveBalance();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        balanceInput.setKeyImeChangeListener(new BalanceEditText.KeyImeChange() {
+            @Override
+            public void onKeyIme(int keyCode, KeyEvent event) {
+                if (KeyEvent.KEYCODE_BACK == event.getKeyCode()) {
+                    CloseBalanceEditBox();
+                }
+            }
+        });
     }
 
     @Override
@@ -522,4 +468,15 @@ public class Balance extends AppCompatActivity {
             Update();
         }
     }
+
+//    @Override
+//    public void onBackPressed() {
+//        // if edit box is open then hide it instead of exit
+//        if (findViewById(R.id.editBalanceBox).getVisibility() == FrameLayout.VISIBLE) {
+//            findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.GONE);
+//            return;
+//        }
+//
+//        super.onBackPressed();
+//    }
 }

@@ -3,7 +3,9 @@
     android:orientation="horizontal" android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:paddingTop="5dp"
-    android:paddingBottom="5dp">
+    android:paddingBottom="5dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp">
 
     <LinearLayout
         android:orientation="vertical"
@@ -53,14 +55,32 @@
             android:paddingTop="5dp" />
     </LinearLayout>
 
-    <TextView
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="0dp"
-        android:layout_height="fill_parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="@string/loading_message"
-        android:id="@+id/coinValue"
+        android:layout_height="match_parent"
+        android:weightSum="1"
+        android:paddingLeft="20dp"
         android:gravity="center_vertical|right"
-        android:textStyle="bold"
-        android:paddingRight="5dp"
-        android:layout_weight=".5" />
+        android:layout_weight=".5">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/loading_message"
+            android:id="@+id/coinValue"
+            android:gravity="center_vertical|right"
+            android:textStyle="bold"
+            android:paddingRight="5dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/loading_message"
+            android:id="@+id/holdingPercent"
+            android:gravity="center_vertical|right"
+            android:paddingRight="5dp" />
+    </LinearLayout>
 </LinearLayout>

@@ -17,10 +17,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".AddAccount"
-            android:label="@string/title_activity_add_account" >
-        </activity>
     </application>
 
 </manifest>

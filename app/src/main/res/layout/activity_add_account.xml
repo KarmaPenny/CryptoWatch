@@ -22,7 +22,7 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="350dp"
-            android:id="@+id/addressInput"
+            android:id="@+id/balanceInput"
             android:gravity="top"
             android:layout_weight="1.06"
             android:maxLines="1"

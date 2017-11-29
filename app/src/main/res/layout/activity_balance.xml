@@ -29,7 +29,7 @@
         <ImageView
             android:layout_width="70dp"
             android:layout_height="match_parent"
-            android:id="@+id/imageView"
+            android:id="@+id/refreshButton"
             android:src="@drawable/refresh"
             android:padding="16dp"
             android:clickable="true"
@@ -38,94 +38,77 @@
             android:layout_alignParentRight="true" />
     </RelativeLayout>
 
-    <TabHost
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/tabHost"
-        android:layout_below="@+id/relativeLayout">
+        android:layout_height="50dp"
+        android:background="#d9d9d9"
+        android:id="@+id/linearLayout"
+        android:layout_below="@+id/relativeLayout"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
 
-        <LinearLayout
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/total_balance"
+            android:textStyle="bold"
+            android:textSize="25sp"
+            android:gravity="center_vertical" />
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/loading_message"
+            android:id="@+id/valueTotal"
+            android:textStyle="bold"
+            android:gravity="center_vertical|right"
+            android:paddingRight="5dp"
+            android:paddingLeft="5dp"
+            android:textSize="30sp" />
+    </LinearLayout>
 
-            <TabWidget
-                android:id="@android:id/tabs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+    <ListView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/balancesList"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:layout_below="@+id/linearLayout" />
 
-            <FrameLayout
-                android:id="@android:id/tabcontent"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="16dp">
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/editBalanceBox"
+        android:background="#ffffff">
 
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:id="@+id/addressesTab">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="BTC Balance"
+            android:id="@+id/editTitle"
+            android:padding="10dp"
+            android:background="#e48300" />
 
-                    <ListView
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:id="@+id/accountsList"
-                        android:layout_weight=".9" />
+        <com.colerobinette.cryptowatch.BalanceEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/balanceInput"
+            android:layout_weight="1.06"
+            android:maxLines="1"
+            android:inputType="numberDecimal"
+            android:layout_below="@+id/editTitle"
+            android:gravity="center_vertical|right"
+            android:textSize="40sp"
+            android:paddingRight="20dp"
+            android:paddingLeft="20dp"
+            android:imeOptions="actionDone"/>
 
-                    <Button
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/add_button"
-                        android:id="@+id/addButton"
-                        android:onClick="AddAccount" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/balanceTab"
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <LinearLayout
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingBottom="15dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?android:attr/textAppearanceLarge"
-                            android:text="@string/total_balance"
-                            android:textStyle="bold"
-                            android:textSize="25sp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?android:attr/textAppearanceLarge"
-                            android:text="@string/loading_message"
-                            android:id="@+id/valueTotal"
-                            android:textStyle="bold"
-                            android:gravity="right"
-                            android:paddingRight="5dp"
-                            android:paddingLeft="5dp"
-                            android:textSize="30sp" />
-                    </LinearLayout>
-
-                    <ListView
-                        android:layout_width="fill_parent"
-                        android:layout_height="fill_parent"
-                        android:id="@+id/balancesList"
-                        android:divider="@null"
-                        android:dividerHeight="0dp" />
-
-                </LinearLayout>
-
-            </FrameLayout>
-
-        </LinearLayout>
-    </TabHost>
+    </RelativeLayout>
 
 </RelativeLayout>
