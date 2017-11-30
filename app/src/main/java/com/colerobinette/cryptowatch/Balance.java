@@ -19,6 +19,7 @@ import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -242,6 +243,12 @@ public class Balance extends Activity {
         findViewById(R.id.sortCoinButton).setEnabled(toggle);
         findViewById(R.id.sortHoldingsButton).setEnabled(toggle);
         findViewById(R.id.sortPriceButton).setEnabled(toggle);
+
+        if (toggle) {
+            findViewById(R.id.greyOverlay).setVisibility(LinearLayout.GONE);
+        } else {
+            findViewById(R.id.greyOverlay).setVisibility(LinearLayout.VISIBLE);
+        }
     }
 
     public void CloseNewCoinBox() {
@@ -326,7 +333,7 @@ public class Balance extends Activity {
         ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
 
         // set the edit title and erase the balance input text
-        ((TextView) findViewById(R.id.editTitle)).setText(listing.name + " Balance");
+        ((TextView) findViewById(R.id.editTitle)).setText("Enter " + listing.name.toUpperCase() + " Holdings");
         ((TextView) findViewById(R.id.balanceInput)).setText("");
 
         // disable input
@@ -537,6 +544,18 @@ public class Balance extends Activity {
             }
         }.execute();
     }
+
+//    Handler handler = new Handler();
+//    void AutoUpdate() {
+//        Log.d("AUTO UPDATE", "FIRED");
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                Update();
+//                AutoUpdate();
+//            }
+//        }, 30000);
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

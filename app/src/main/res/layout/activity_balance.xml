@@ -175,6 +175,13 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#8f7f7f7f"
+        android:visibility="gone"
+        android:id="@+id/greyOverlay"></RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="#ffffff"
@@ -189,7 +196,6 @@
             android:padding="10dp"
             android:background="@color/primary"
             android:textColor="#ffffff"
-            android:textStyle="bold"
             android:text="@string/enterCoinName" />
 
         <com.colerobinette.cryptowatch.BalanceEditText
@@ -221,8 +227,7 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:id="@+id/editTitle"
             android:padding="10dp"
-            android:textColor="#ffffff"
-            android:textStyle="bold" />
+            android:textColor="#ffffff" />
 
         <ImageView
             android:layout_width="70dp"
@@ -232,7 +237,8 @@
             android:layout_alignParentEnd="true"
             android:src="@drawable/trash"
             android:layout_above="@+id/balanceInput"
-            android:onClick="DeleteSelected" />
+            android:onClick="DeleteSelected"
+            android:contentDescription="@string/delete" />
 
         <com.colerobinette.cryptowatch.BalanceEditText
             android:layout_width="match_parent"

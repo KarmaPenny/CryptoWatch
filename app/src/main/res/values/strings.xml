@@ -24,4 +24,5 @@
     <string name="enterCoinName">Enter Coin Name</string>
     <string name="coinicon">coinIcon</string>
     <string name="miota">MIOTA</string>
+    <string name="delete">Delete Coin</string>
 </resources>
