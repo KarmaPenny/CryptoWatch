@@ -185,9 +185,10 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:id="@+id/balancesList"
-        android:divider="#666666"
+        android:divider="#cccccc"
         android:dividerHeight="1dp"
-        android:layout_below="@+id/columnHeaders" />
+        android:layout_below="@+id/columnHeaders"
+        android:drawSelectorOnTop="false" />
 
     <RelativeLayout
         android:layout_width="match_parent"

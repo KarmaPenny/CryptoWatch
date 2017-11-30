@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -176,6 +177,7 @@ public class Balance extends Activity {
 
     public static String sortBy = "coin";
     public static boolean reverseSort = false;
+    public static boolean paused = false;
 
     public static void Load(Context context) {
         try {
@@ -557,6 +559,19 @@ public class Balance extends Activity {
         }.execute();
     }
 
+    Handler handler = new Handler();
+    void AutoUpdate() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!paused) {
+                    Update();
+                }
+                AutoUpdate();
+            }
+        }, 60000);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -636,6 +651,9 @@ public class Balance extends Activity {
                 }
             }
         });
+
+        // Auto Update
+        AutoUpdate();
     }
 
     @Override
@@ -645,5 +663,12 @@ public class Balance extends Activity {
         if (ShouldUpdate()) {
             Update();
         }
+        paused = false;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        paused = true;
     }
 }
