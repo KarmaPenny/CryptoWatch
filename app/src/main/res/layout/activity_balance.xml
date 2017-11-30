@@ -8,23 +8,38 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#e48300"
+        android:background="@color/primary"
         android:id="@+id/relativeLayout">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="@string/app_name"
             android:id="@+id/title"
             android:textStyle="bold"
             android:textSize="20sp"
-            android:textColor="#ffffff"
             android:gravity="left|center_vertical"
             android:paddingLeft="20dp"
             android:paddingTop="15dp"
             android:paddingRight="15dp"
-            android:paddingBottom="17dp" />
+            android:paddingBottom="17dp"
+            android:textColor="@color/text_header" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+"
+            android:id="@+id/addButton"
+            android:textStyle="bold"
+            android:textSize="40sp"
+            android:gravity="left|center_vertical"
+            android:paddingLeft="20dp"
+            android:paddingTop="0dp"
+            android:paddingRight="15dp"
+            android:paddingBottom="0dp"
+            android:textColor="@color/text_header"
+            android:layout_toStartOf="@+id/refreshButton"
+            android:onClick="EnterCoinName" />
 
         <ImageView
             android:layout_width="70dp"
@@ -41,8 +56,7 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="#d9d9d9"
+        android:layout_height="70dp"
         android:id="@+id/linearLayout"
         android:layout_below="@+id/relativeLayout"
         android:paddingLeft="10dp"
@@ -51,32 +65,114 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="@string/total_balance"
             android:textStyle="bold"
             android:textSize="25sp"
-            android:gravity="center_vertical" />
+            android:gravity="center_vertical"
+            android:textColor="@color/text_primary" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="@string/loading_message"
             android:id="@+id/valueTotal"
             android:textStyle="bold"
             android:gravity="center_vertical|right"
             android:paddingRight="5dp"
             android:paddingLeft="5dp"
-            android:textSize="30sp" />
+            android:textSize="30sp"
+            android:textColor="@color/text_primary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@+id/linearLayout"
+        android:id="@+id/linearLayout2"
+        android:background="#666666"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:text="@string/Coin"
+            android:id="@+id/textView"
+            android:gravity="center_vertical|center_horizontal"
+            android:layout_weight=".1"
+            android:textColor="@color/text_header"
+            android:textSize="15sp"
+            android:textStyle="normal|bold"
+            android:onClick="SortByCoin" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:text="@string/Holdings"
+            android:id="@+id/textView2"
+            android:gravity="center_vertical|right"
+            android:layout_weight=".45"
+            android:textColor="@color/text_header"
+            android:textSize="15sp"
+            android:textStyle="normal|bold"
+            android:onClick="SortByHoldings" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:text="@string/Price"
+            android:id="@+id/textView3"
+            android:gravity="center_vertical|right"
+            android:layout_weight=".45"
+            android:textColor="@color/text_header"
+            android:textSize="15sp"
+            android:textStyle="normal|bold"
+            android:onClick="SortByPrice" />
+
     </LinearLayout>
 
     <ListView
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:id="@+id/balancesList"
-        android:divider="@null"
-        android:dividerHeight="0dp"
-        android:layout_below="@+id/linearLayout" />
+        android:divider="@color/primary"
+        android:dividerHeight="1dp"
+        android:layout_below="@+id/linearLayout2" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#ffffff"
+        android:id="@+id/newCoinBox"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:id="@+id/AddCoinTitle"
+            android:padding="10dp"
+            android:background="@color/primary"
+            android:textColor="#ffffff"
+            android:textStyle="bold"
+            android:text="@string/enterCoinName" />
+
+        <com.colerobinette.cryptowatch.BalanceEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/coinInput"
+            android:maxLines="1"
+            android:gravity="center_vertical|right"
+            android:textSize="40sp"
+            android:paddingRight="20dp"
+            android:paddingLeft="20dp"
+            android:imeOptions="actionDone"
+            android:textColor="@color/text_primary"
+            android:layout_below="@+id/AddCoinTitle"
+            android:inputType="textPersonName" />
+    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -84,22 +180,31 @@
         android:visibility="gone"
         android:layout_alignParentBottom="true"
         android:id="@+id/editBalanceBox"
-        android:background="#ffffff">
+        android:background="@color/primary">
 
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="BTC Balance"
             android:id="@+id/editTitle"
             android:padding="10dp"
-            android:background="#e48300" />
+            android:textColor="#ffffff"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageView"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/trash"
+            android:layout_above="@+id/balanceInput"
+            android:onClick="DeleteSelected" />
 
         <com.colerobinette.cryptowatch.BalanceEditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/balanceInput"
-            android:layout_weight="1.06"
             android:maxLines="1"
             android:inputType="numberDecimal"
             android:layout_below="@+id/editTitle"
@@ -107,7 +212,9 @@
             android:textSize="40sp"
             android:paddingRight="20dp"
             android:paddingLeft="20dp"
-            android:imeOptions="actionDone"/>
+            android:imeOptions="actionDone"
+            android:textColor="@color/text_primary"
+            android:background="#ffffff" />
 
     </RelativeLayout>
 
