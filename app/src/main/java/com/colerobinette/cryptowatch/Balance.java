@@ -291,9 +291,11 @@ public class Balance extends Activity {
     public void AddCoin() {
         // update listing with new balance
         String coinName = ((TextView) findViewById(R.id.coinInput)).getText().toString().replace(" ", "-");
-        ExchangeListing listing = new ExchangeListing();
-        listing.name = coinName;
-        listings.put(coinName, listing);
+        if (!listings.containsKey(coinName)) {
+            ExchangeListing listing = new ExchangeListing();
+            listing.name = coinName;
+            listings.put(coinName, listing);
+        }
 
         // Close balance box
         CloseNewCoinBox();
