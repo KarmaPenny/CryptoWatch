@@ -1,47 +1,32 @@
 # CryptoWatch
-CryptoWatch lets you view the balance and worth of your cold-storage or paper-wallet crypto coin portfolio.
+CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfolio.
 
-# Supported Coins
-* BTC - Bitcoin
+## Usage
 
-* LTC - Litecoin
+### Adding a new coin
 
-* ETH - Ethereum
+1.) Click the plus icon in the top right corner to add a coin to your portfolio.
 
-# Add Addresses
-1.) Click on the settings drop down (3 vertical dots)
+2.) Enter the name of the coin as it appears on coinmarketcap.com.
 
-2.) Click on addresses
+3.) Set your holdings for the new coin.
 
-3.) Click on a blank space (or an existing address->add) to begin adding an address
+### Change Coin Holdings
 
-4.) Select which type of coin the address is for
+1.) Long press the coin you want to change.
 
-5.) Enter the address (long click to paste)
+2.) Enter the new holdings amount.
 
-6.) Click the Add button
+### Remove a Coin
 
-# Delete Address
-1.) Click on the settings drop down (3 vertical dots)
+1.) Long press the coin you want to remove.
 
-2.) Click on addresses
+2.) Press the trash button.
 
-3.) Click on an address to delete
+### View Coin Info
 
-4.) Click Delete
+Click on a coin to goto it's coinmarketcap.com webpage
 
-# Copy Address to Clipboard
-1.) Click on the settings drop down (3 vertical dots)
+### Sorting
 
-2.) Click on addresses
-
-3.) Click on an address to copy
-
-4.) Click Copy
-
-# Donations
-* BTC - 3KpH3d7eBwWNihMj9Z64qNG1sjj1mLFfom
-
-* LTC - LRAXnHBzDwjQpaebBykoK87WB8XtMsEtD8
-
-* ETH - 0x013f07D2ad0dbA2F67800b223f78a56E616961F9
+You can sort by coin, holdings, and price change by clicking on the coin, holdings, and price column headers.
