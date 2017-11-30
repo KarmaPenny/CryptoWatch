@@ -25,4 +25,11 @@
     <string name="coinicon">coinIcon</string>
     <string name="miota">MIOTA</string>
     <string name="delete">Delete Coin</string>
+    <string name="plus">+</string>
+    <string name="refresh">Refresh</string>
+    <string name="dollarsign">$</string>
+    <string name="change24hr">24hr Change</string>
+    <string name="infobutton">i</string>
+    <string name="newCoin">New Coin</string>
+    <string name="help">Help</string>
 </resources>

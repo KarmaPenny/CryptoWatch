@@ -169,7 +169,7 @@ class BalanceAdapter extends BaseAdapter {
 
 public class Balance extends Activity {
     public static BalanceAdapter balanceAdapter = null;
-    static int SelectedIndex = 0;
+    static String SelectedCoin = "";
     public static Map<String, ExchangeListing> listings = new LinkedHashMap<>();
     public static double totalValue = 0;
     public static Context actContext;
@@ -230,8 +230,13 @@ public class Balance extends Activity {
         }
     }
 
+    public void OpenReadme(View v) {
+        Intent intent= new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/KarmaPenny/CryptoWatch/blob/master/README.md"));
+        startActivity(intent);
+    }
+
     public void LookupSelected() {
-        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+        ExchangeListing listing = listings.get(SelectedCoin);
         Intent intent= new Intent(Intent.ACTION_VIEW, Uri.parse("https://coinmarketcap.com/currencies/" + listing.name + "/"));
         startActivity(intent);
     }
@@ -297,11 +302,7 @@ public class Balance extends Activity {
         Update(coinName);
 
         // prompt for balance input
-        for (int i = 0; i < listings.size(); i++) {
-            if (((ExchangeListing)listings.values().toArray()[i]).name == listing.name) {
-                SelectedIndex = i;
-            }
-        }
+        SelectedCoin = coinName;
         EditSelected();
     }
 
@@ -321,7 +322,7 @@ public class Balance extends Activity {
     }
 
     public void DeleteSelected(View v) {
-        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+        ExchangeListing listing = listings.get(SelectedCoin);
         listings.remove(listing.name);
 
         CloseBalanceEditBox();
@@ -330,7 +331,7 @@ public class Balance extends Activity {
     }
 
     public void EditSelected() {
-        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+        ExchangeListing listing = listings.get(SelectedCoin);
 
         // set the edit title and erase the balance input text
         ((TextView) findViewById(R.id.editTitle)).setText("Enter " + listing.name.toUpperCase() + " Holdings");
@@ -351,7 +352,7 @@ public class Balance extends Activity {
 
     public void SaveBalance() {
         // update listing with new balance
-        ExchangeListing listing = (ExchangeListing) Balance.listings.values().toArray()[SelectedIndex];
+        ExchangeListing listing = listings.get(SelectedCoin);
         String balance = ((TextView) findViewById(R.id.balanceInput)).getText().toString();
         listing.balance = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
 
@@ -452,17 +453,22 @@ public class Balance extends Activity {
         ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
 
         // Update 24 hour change
-        double change24 = 100 * (totalValue - previousValue) / previousValue;
         TextView change = (TextView) findViewById(R.id.change24);
-        if (change24 > 0) {
-            change.setText("+" + String.format("%1$,.2f", change24) + "%");
-            change.setTextColor(Color.rgb(0, 150, 0));
-        } else if (change24 < 0) {
-            change.setText(String.format("%1$,.2f", change24) + "%");
-            change.setTextColor(Color.RED);
-        } else {
-            change.setText("+" + String.format("%1$,.2f", change24) + "%");
+        if (previousValue <= 0) {
+            change.setText("+" + String.format("%1$,.2f", 0) + "%");
             change.setTextColor(Color.BLACK);
+        } else {
+            double change24 = 100 * (totalValue - previousValue) / previousValue;
+            if (change24 > 0) {
+                change.setText("+" + String.format("%1$,.2f", change24) + "%");
+                change.setTextColor(Color.rgb(0, 150, 0));
+            } else if (change24 < 0) {
+                change.setText(String.format("%1$,.2f", change24) + "%");
+                change.setTextColor(Color.RED);
+            } else {
+                change.setText("+" + String.format("%1$,.2f", change24) + "%");
+                change.setTextColor(Color.BLACK);
+            }
         }
 
         // update list views
@@ -545,18 +551,6 @@ public class Balance extends Activity {
         }.execute();
     }
 
-//    Handler handler = new Handler();
-//    void AutoUpdate() {
-//        Log.d("AUTO UPDATE", "FIRED");
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                Update();
-//                AutoUpdate();
-//            }
-//        }, 30000);
-//    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -573,7 +567,7 @@ public class Balance extends Activity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-                SelectedIndex = position;
+                SelectedCoin = ((ExchangeListing) listings.values().toArray()[position]).name;
                 LookupSelected();
             }
         });
@@ -581,7 +575,7 @@ public class Balance extends Activity {
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapter, View v, int position, long id) {
-                SelectedIndex = position;
+                SelectedCoin = ((ExchangeListing) listings.values().toArray()[position]).name;
                 EditSelected();
                 return true;
             }
