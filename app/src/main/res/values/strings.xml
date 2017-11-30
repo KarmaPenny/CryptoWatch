@@ -3,7 +3,7 @@
     <string name="loading_message">0.00</string>
     <string name="title_activity_add_account">New Address</string>
     <string name="coin_prompt">Select Coin Type</string>
-    <string name="total_balance">Portfolio Value:</string>
+    <string name="total_balance">Total Portfolio Value</string>
     <string-array name="coins">
         <item>ARK - Ark</item>
         <item>BTC - Bitcoin</item>
@@ -22,4 +22,6 @@
     <string name="Holdings">Holdings</string>
     <string name="Price">Price</string>
     <string name="enterCoinName">Enter Coin Name</string>
+    <string name="coinicon">coinIcon</string>
+    <string name="miota">MIOTA</string>
 </resources>

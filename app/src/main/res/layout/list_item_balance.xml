@@ -2,10 +2,11 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal" android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="5dp"
-    android:paddingBottom="5dp"
-    android:paddingLeft="10dp"
-    android:paddingRight="10dp">
+    android:paddingTop="10dp"
+    android:paddingBottom="8dp"
+    android:paddingLeft="15dp"
+    android:paddingRight="15dp"
+    android:baselineAligned="false">
 
     <LinearLayout
         android:orientation="vertical"
@@ -15,17 +16,21 @@
 
         <ImageView
             android:layout_width="match_parent"
-            android:layout_height="45dp"
+            android:layout_height="37dp"
             android:src="@drawable/error"
-            android:id="@+id/coinIcon" />
+            android:id="@+id/coinIcon"
+            android:contentDescription="@string/coinicon"
+            android:paddingTop="3dp" />
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="MIOTA"
-            android:gravity="center_horizontal"
+            android:layout_height="fill_parent"
+            android:text="@string/miota"
+            android:gravity="bottom|center_horizontal"
             android:id="@+id/coinName"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/text_primary"
+            android:textSize="14dp"
+            android:paddingTop="2dp" />
     </LinearLayout>
 
     <LinearLayout
@@ -33,30 +38,26 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:weightSum="1"
-        android:paddingLeft="20dp"
         android:layout_weight=".45">
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:text="@string/loading_message"
             android:id="@+id/coinValue"
             android:gravity="center_vertical|right"
-            android:paddingRight="5dp"
-            android:layout_weight=".7"
-            android:textSize="25sp"
+            android:textSize="20sp"
             android:textColor="@color/text_primary" />
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="fill_parent"
             android:text="@string/loading_message"
             android:id="@+id/coinBalance"
-            android:gravity="center_vertical|right"
-            android:paddingRight="5dp"
-            android:layout_weight=".3"
-            android:textSize="15sp"
-            android:textColor="@color/text_primary" />
+            android:gravity="center_vertical|bottom|right"
+            android:textSize="17sp"
+            android:textColor="@color/text_primary"
+            android:paddingBottom="3dp" />
 
     </LinearLayout>
 
@@ -65,31 +66,27 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:weightSum="1"
-        android:paddingLeft="20dp"
         android:gravity="center_vertical|right"
         android:layout_weight=".45">
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:text="@string/loading_message"
             android:id="@+id/coinPrice"
             android:gravity="center_vertical|right"
-            android:paddingRight="5dp"
-            android:layout_weight=".7"
-            android:textSize="25sp"
+            android:textSize="20sp"
             android:textColor="@color/text_primary" />
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="fill_parent"
             android:text="@string/loading_message"
             android:id="@+id/percentChange"
-            android:gravity="center_vertical|right"
-            android:paddingRight="5dp"
-            android:layout_weight=".3"
-            android:textSize="15sp"
-            android:textColor="@color/text_primary" />
+            android:gravity="bottom|right"
+            android:textSize="17sp"
+            android:textColor="@color/text_primary"
+            android:paddingBottom="3dp" />
     </LinearLayout>
 
 </LinearLayout>

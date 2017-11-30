@@ -172,13 +172,13 @@ public class Balance extends Activity {
     public static Map<String, ExchangeListing> listings = new LinkedHashMap<>();
     public static double totalValue = 0;
     public static Context actContext;
-    public boolean sortedByCoin = false;
-    public boolean sortedByHoldings = false;
-    public boolean sortedByPrice = false;
+
+    public static String sortBy = "coin";
+    public static boolean reverseSort = false;
 
     public static void Load(Context context) {
-        // load balances from file
         try {
+            // load balances from file
             InputStream inputStream = context.openFileInput("listings.txt");
             if ( inputStream != null ) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
@@ -190,6 +190,20 @@ public class Balance extends Activity {
                 }
                 inputStream.close();
             }
+
+            // load sort settings
+            inputStream = context.openFileInput("sort.txt");
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String line = bufferedReader.readLine();
+
+                String[] parts = line.split(",");
+                sortBy = parts[0];
+                reverseSort = Boolean.parseBoolean(parts[1]);
+
+                inputStream.close();
+            }
         }
         catch (Exception e) {
             Log.e("BalancesLoad", e.toString());
@@ -198,10 +212,16 @@ public class Balance extends Activity {
 
     public static void Save(Context context) {
         try {
+            // save balances to file
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("listings.txt", Context.MODE_PRIVATE));
             for (ExchangeListing listing : listings.values()) {
                 outputStreamWriter.write(listing.ToString() + "\n");
             }
+            outputStreamWriter.close();
+
+            // save sort settings to file
+            outputStreamWriter = new OutputStreamWriter(context.openFileOutput("sort.txt", Context.MODE_PRIVATE));
+            outputStreamWriter.write(sortBy + "," + reverseSort);
             outputStreamWriter.close();
         }
         catch (IOException e) {
@@ -216,11 +236,12 @@ public class Balance extends Activity {
     }
 
     public void ToggleInput(boolean toggle) {
-        // disable the balance list
+        // toggle buttons on/off
         findViewById(R.id.balancesList).setEnabled(toggle);
-
-        // disabled the refresh button
         findViewById(R.id.refreshButton).setEnabled(toggle);
+        findViewById(R.id.sortCoinButton).setEnabled(toggle);
+        findViewById(R.id.sortHoldingsButton).setEnabled(toggle);
+        findViewById(R.id.sortPriceButton).setEnabled(toggle);
     }
 
     public void CloseNewCoinBox() {
@@ -338,75 +359,67 @@ public class Balance extends Activity {
         Update();
     }
 
-    public void SortByCoin(View v) {
-        List<Map.Entry<String, ExchangeListing>> list = new LinkedList<>(listings.entrySet());
-        Collections.sort( list, new Comparator<Map.Entry<String, ExchangeListing>>() {
+    public void SortListings() {
+        Comparator comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
             public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                if (sortedByCoin) {
+                if (reverseSort) {
                     return (o2.getValue().name).compareTo(o1.getValue().name);
                 }
                 return (o1.getValue().name).compareTo(o2.getValue().name);
             }
-        });
+        };
+        if (sortBy.equals("holdings")) {
+            comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
+                public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
+                    if(o1.getValue().Value() > o2.getValue().Value())
+                        return (reverseSort) ? 1 : -1;
+                    else if(o1.getValue().Value() < o2.getValue().Value())
+                        return (reverseSort) ? -1 : 1;
+                    return 0;
+                }
+            };
+        } else if (sortBy.equals("price")) {
+            comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
+                public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
+                    if(o1.getValue().change24h > o2.getValue().change24h)
+                        return (reverseSort) ? 1 : -1;
+                    else if(o1.getValue().change24h < o2.getValue().change24h)
+                        return (reverseSort) ? -1 : 1;
+                    return 0;
+                }
+            };
+        }
 
-        sortedByCoin = !sortedByCoin;
-        sortedByHoldings = false;
-        sortedByPrice = false;
+        List<Map.Entry<String, ExchangeListing>> list = new LinkedList<>(listings.entrySet());
+        Collections.sort(list, comparator);
 
-        Map<String, ExchangeListing> result = new LinkedHashMap<String, ExchangeListing>();
+        Map<String, ExchangeListing> result = new LinkedHashMap<>();
         for (Map.Entry<String, ExchangeListing> entry : list) {
             result.put(entry.getKey(), entry.getValue());
         }
         listings = result;
+    }
+
+    public void SortByValue(String value) {
+        if (sortBy == value) {
+            reverseSort = !reverseSort;
+        } else {
+            sortBy = value;
+            reverseSort = false;
+        }
         UpdateDisplay();
+    }
+
+    public void SortByCoin(View v) {
+        SortByValue("coin");
     }
 
     public void SortByHoldings(View v) {
-        List<Map.Entry<String, ExchangeListing>> list = new LinkedList<>(listings.entrySet());
-        Collections.sort( list, new Comparator<Map.Entry<String, ExchangeListing>>() {
-            public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                if(o1.getValue().Value() > o2.getValue().Value())
-                    return (sortedByHoldings) ? 1 : -1;
-                else if(o1.getValue().Value() < o2.getValue().Value())
-                    return (sortedByHoldings) ? -1 : 1;
-                return 0;
-            }
-        });
-
-        sortedByCoin = false;
-        sortedByHoldings = !sortedByHoldings;
-        sortedByPrice = false;
-
-        Map<String, ExchangeListing> result = new LinkedHashMap<String, ExchangeListing>();
-        for (Map.Entry<String, ExchangeListing> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-        listings = result;
-        UpdateDisplay();
+        SortByValue("holdings");
     }
 
     public void SortByPrice(View v) {
-        List<Map.Entry<String, ExchangeListing>> list = new LinkedList<>(listings.entrySet());
-        Collections.sort( list, new Comparator<Map.Entry<String, ExchangeListing>>() {
-            public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                if(o1.getValue().price > o2.getValue().price)
-                    return (sortedByPrice) ? 1 : -1;
-                else if(o1.getValue().price < o2.getValue().price)
-                    return (sortedByPrice) ? -1 : 1;
-                return 0;
-            }
-        });
-
-        sortedByCoin = false;
-        sortedByHoldings = false;
-        sortedByPrice = !sortedByPrice;
-
-        Map<String, ExchangeListing> result = new LinkedHashMap<String, ExchangeListing>();
-        for (Map.Entry<String, ExchangeListing> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-        listings = result;
-        UpdateDisplay();
+        SortByValue("price");
     }
 
     void UpdatePrices() {
@@ -416,15 +429,34 @@ public class Balance extends Activity {
     }
 
     void UpdateDisplay() {
+        // resort listings
+        SortListings();
+
         // save data
         Save(this);
 
         // Update total value
         totalValue = 0;
+        double previousValue = 0;
         for (ExchangeListing listing : listings.values()) {
             totalValue += listing.Value();
+            previousValue += listing.Value() / (1 + (listing.change24h / 100));
         }
-        ((TextView) findViewById(R.id.valueTotal)).setText("$" + String.format("%1$,.2f", totalValue));
+        ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
+
+        // Update 24 hour change
+        double change24 = 100 * (totalValue - previousValue) / previousValue;
+        TextView change = (TextView) findViewById(R.id.change24);
+        if (change24 > 0) {
+            change.setText("+" + String.format("%1$,.2f", change24) + "%");
+            change.setTextColor(Color.rgb(0, 150, 0));
+        } else if (change24 < 0) {
+            change.setText(String.format("%1$,.2f", change24) + "%");
+            change.setTextColor(Color.RED);
+        } else {
+            change.setText("+" + String.format("%1$,.2f", change24) + "%");
+            change.setTextColor(Color.BLACK);
+        }
 
         // update list views
         balanceAdapter.notifyDataSetChanged();
