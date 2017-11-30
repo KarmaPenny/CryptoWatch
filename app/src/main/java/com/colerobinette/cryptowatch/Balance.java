@@ -323,6 +323,10 @@ public class Balance extends Activity {
 
     public void DeleteSelected(View v) {
         ExchangeListing listing = listings.get(SelectedCoin);
+        File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + listing.name + ".png");
+        if (file.exists()) {
+            file.delete();
+        }
         listings.remove(listing.name);
 
         CloseBalanceEditBox();
