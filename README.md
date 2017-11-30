@@ -33,4 +33,4 @@ You can sort by coin, holdings, and price change by clicking on the coin, holdin
 
 ### Refresh Price Info
 
-Press the refresh button in the top right corner to refresh all price info and recalculate portfolio value.
+Price info is updated automatically every minute but if you are feeling impatient you can press the refresh button in the top right corner to refresh all price info manually.
