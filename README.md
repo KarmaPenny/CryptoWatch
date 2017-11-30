@@ -30,3 +30,7 @@ Click on a coin to goto it's coinmarketcap.com webpage
 ### Sorting
 
 You can sort by coin, holdings, and price change by clicking on the coin, holdings, and price column headers.
+
+### Refresh Price Info
+
+Press the refresh button in the top right corner to refresh all price info and recalculate portfolio value.
