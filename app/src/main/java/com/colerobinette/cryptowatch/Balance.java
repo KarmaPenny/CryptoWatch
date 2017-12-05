@@ -149,7 +149,7 @@ class BalanceAdapter extends BaseAdapter {
         // set all the text of the listview item
         ((TextView) view.findViewById(R.id.coinName)).setText(listing.symbol);
         ((TextView) view.findViewById(R.id.coinPrice)).setText("$" + String.format("%1$,.2f", listing.price));
-        ((TextView) view.findViewById(R.id.coinBalance)).setText(String.valueOf(listing.balance));
+        ((TextView) view.findViewById(R.id.coinBalance)).setText(String.format("%1$.3f", listing.balance));
         ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", listing.Value()));
 
         TextView change = (TextView) view.findViewById(R.id.percentChange);
