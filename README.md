@@ -29,7 +29,11 @@ Click on a coin to goto it's coinmarketcap.com webpage
 
 ### Sorting
 
-You can sort by coin, holdings, and price change by clicking on the coin, holdings, and price column headers.
+Click on the column headers to sort by coin, holdings or price change.
+
+### Change Time Frame
+
+Click on the total portfolio change percentage to change the time frame.
 
 ### Refresh Price Info
 
