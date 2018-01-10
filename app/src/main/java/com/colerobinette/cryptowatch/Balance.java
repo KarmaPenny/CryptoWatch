@@ -11,6 +11,9 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.View;
@@ -79,7 +82,7 @@ class ExchangeListing {
             change24h = result.getDouble("percent_change_24h");
             symbol = result.getString("symbol");
 
-            File file = new File(name + ".png");
+            File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + name + ".png");
             if (!file.exists()) {
                 URL iconUrl = new URL("https://files.coinmarketcap.com/static/img/coins/128x128/" + name + ".png");
                 InputStream in2 = new BufferedInputStream(iconUrl.openStream());
@@ -178,6 +181,8 @@ public class Balance extends Activity {
     public static String sortBy = "coin";
     public static boolean reverseSort = false;
     public static boolean paused = false;
+
+    public boolean updating = false;
 
     public static void Load(Context context) {
         try {
@@ -481,6 +486,13 @@ public class Balance extends Activity {
 
         // update list views
         balanceAdapter.notifyDataSetChanged();
+
+        // stop animating refresh button
+        final ImageView refreshButton = (ImageView) findViewById(R.id.refreshButton);
+        refreshButton.setAnimation(null);
+
+        // release lock on updating
+        updating = false;
     }
 
     void RecordUpdateTime() {
@@ -527,20 +539,33 @@ public class Balance extends Activity {
     }
 
     void Update() {
-        RecordUpdateTime();
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                UpdatePrices();
-                return null;
-            }
+        if (!updating) {
+            // prevent concurrent updates
+            updating = true;
 
-            @Override
-            protected void onPostExecute(Void empty) {
-                super.onPostExecute(empty);
-                UpdateDisplay();
-            }
-        }.execute();
+            // animate refresh button
+            RotateAnimation anim = new RotateAnimation(0f, 360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+            anim.setInterpolator(new LinearInterpolator());
+            anim.setRepeatCount(Animation.INFINITE);
+            anim.setDuration(1000);
+            final ImageView refreshButton = (ImageView) findViewById(R.id.refreshButton);
+            refreshButton.startAnimation(anim);
+
+            RecordUpdateTime();
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    UpdatePrices();
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void empty) {
+                    super.onPostExecute(empty);
+                    UpdateDisplay();
+                }
+            }.execute();
+        }
     }
 
     void Update(final String coinName) {
