@@ -72,68 +72,83 @@
         android:paddingBottom="8dp"
         android:id="@+id/portfolioDisplay">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/total_balance"
-            android:textStyle="bold"
-            android:textSize="12sp"
-            android:gravity="center_vertical"
-            android:textColor="#666666"
-            android:layout_alignParentStart="false"
-            android:id="@+id/portfolioValueTitle" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/dollarsign"
-            android:id="@+id/smallDollarSign"
-            android:textStyle="bold"
-            android:gravity="left|center_vertical"
-            android:paddingRight="0dp"
-            android:paddingLeft="0dp"
-            android:textSize="20sp"
-            android:textColor="@color/text_primary"
-            android:layout_below="@+id/portfolioValueTitle"
-            android:paddingTop="9dp" />
-
-        <TextView
+        <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="@string/loading_message"
-            android:id="@+id/valueTotal"
-            android:gravity="top|left"
-            android:textSize="42sp"
-            android:textColor="@color/text_primary"
-            android:layout_below="@+id/portfolioValueTitle"
-            android:layout_toEndOf="@+id/smallDollarSign"
-            android:paddingLeft="3dp"
-            android:textStyle="bold" />
+            android:id="@+id/portfolioValue">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/change24hr"
-            android:textStyle="bold"
-            android:textSize="12sp"
-            android:gravity="center_vertical"
-            android:textColor="#666666"
-            android:layout_alignParentStart="false"
-            android:id="@+id/change24hrTitle"
-            android:layout_alignParentEnd="true" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/total_balance"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:gravity="center_vertical"
+                android:textColor="#666666"
+                android:layout_alignParentStart="false"
+                android:id="@+id/portfolioValueTitle" />
 
-        <TextView
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dollarsign"
+                android:id="@+id/smallDollarSign"
+                android:textStyle="bold"
+                android:gravity="left|center_vertical"
+                android:paddingRight="0dp"
+                android:paddingLeft="0dp"
+                android:textSize="20sp"
+                android:textColor="@color/text_primary"
+                android:layout_below="@+id/portfolioValueTitle"
+                android:paddingTop="9dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="@string/loading_message"
+                android:id="@+id/valueTotal"
+                android:gravity="top|left"
+                android:textSize="42sp"
+                android:textColor="@color/text_primary"
+                android:layout_below="@+id/portfolioValueTitle"
+                android:layout_toEndOf="@+id/smallDollarSign"
+                android:paddingLeft="3dp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <RelativeLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/loading_message"
-            android:id="@+id/change24"
-            android:textStyle="bold"
-            android:gravity="left|center_vertical"
-            android:textSize="20sp"
-            android:textColor="@color/text_primary"
-            android:layout_alignEnd="@+id/change24hrTitle"
-            android:layout_below="@+id/change24hrTitle"
-            android:paddingTop="5dp" />
+            android:layout_height="match_parent"
+            android:id="@+id/portfolioChange"
+            android:layout_toEndOf="@+id/portfolioValue"
+            android:onClick="ChangeTimeFrame">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/change24hr"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:gravity="center_vertical"
+                android:textColor="#666666"
+                android:layout_alignParentStart="false"
+                android:id="@+id/changeTitle"
+                android:layout_alignParentEnd="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/loading_message"
+                android:id="@+id/change"
+                android:textStyle="bold"
+                android:gravity="left|center_vertical"
+                android:textSize="20sp"
+                android:textColor="@color/text_primary"
+                android:layout_alignEnd="@+id/changeTitle"
+                android:layout_below="@+id/changeTitle"
+                android:paddingTop="5dp" />
+        </RelativeLayout>
+
     </RelativeLayout>
 
     <LinearLayout

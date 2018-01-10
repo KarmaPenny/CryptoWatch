@@ -44,7 +44,9 @@ import java.util.Map;
 class ExchangeListing {
     public String name;
     public String symbol;
+    public double change1h;
     public double change24h;
+    public double change7d;
     public double balance;
     public double price;
 
@@ -79,7 +81,9 @@ class ExchangeListing {
             in.close();
 
             price = result.getDouble("price_usd");
+            change1h = result.getDouble("percent_change_1h");
             change24h = result.getDouble("percent_change_24h");
+            change7d = result.getDouble("percent_change_7d");
             symbol = result.getString("symbol");
 
             File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + name + ".png");
@@ -110,7 +114,21 @@ class ExchangeListing {
     }
 
     public String ToString() {
-        return name + "," + symbol + "," + String.valueOf(change24h) + "," + String.valueOf(balance) + "," + String.valueOf(price);
+        String value = "";
+        value += name;
+        value += ",";
+        value += symbol;
+        value += ",";
+        value += String.valueOf(change24h);
+        value += ",";
+        value += String.valueOf(balance);
+        value += ",";
+        value += String.valueOf(price);
+        value += ",";
+        value += String.valueOf(change1h);
+        value += ",";
+        value += String.valueOf(change7d);
+        return value;
     }
 }
 
@@ -155,16 +173,25 @@ class BalanceAdapter extends BaseAdapter {
         ((TextView) view.findViewById(R.id.coinBalance)).setText(String.format("%1$.3f", listing.balance));
         ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", listing.Value()));
 
-        TextView change = (TextView) view.findViewById(R.id.percentChange);
-        if (listing.change24h > 0) {
-            change.setText("+" + String.format("%1$,.2f", listing.change24h) + "%");
-            change.setTextColor(Color.rgb(0, 150, 0));
-        } else if (listing.change24h < 0) {
-            change.setText(String.format("%1$,.2f", listing.change24h) + "%");
-            change.setTextColor(Color.RED);
+        // get change of current timeframe
+        double change = listing.change1h;
+        if (Balance.changeTimeFrame == 1) {
+            change = listing.change24h;
+        } else if (Balance.changeTimeFrame == 2) {
+            change = listing.change7d;
+        }
+
+        // set change text
+        TextView changeText = (TextView) view.findViewById(R.id.percentChange);
+        if (change > 0) {
+            changeText.setText("+" + String.format("%1$,.2f", change) + "%");
+            changeText.setTextColor(Color.rgb(0, 150, 0));
+        } else if (change < 0) {
+            changeText.setText(String.format("%1$,.2f", change) + "%");
+            changeText.setTextColor(Color.RED);
         } else {
-            change.setText("+" + String.format("%1$,.2f", listing.change24h) + "%");
-            change.setTextColor(Color.BLACK);
+            changeText.setText("+" + String.format("%1$,.2f", change) + "%");
+            changeText.setTextColor(Color.BLACK);
         }
 
         return view;
@@ -178,11 +205,11 @@ public class Balance extends Activity {
     public static double totalValue = 0;
     public static Context actContext;
 
+    public static int changeTimeFrame = 1;
     public static String sortBy = "coin";
     public static boolean reverseSort = false;
     public static boolean paused = false;
-
-    public boolean updating = false;
+    public static boolean updating = false;
 
     public static void Load(Context context) {
         try {
@@ -402,9 +429,18 @@ public class Balance extends Activity {
         } else if (sortBy.equals("price")) {
             comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
                 public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                    if(o1.getValue().change24h > o2.getValue().change24h)
+                    double v1 = o1.getValue().change1h;
+                    double v2 = o2.getValue().change1h;
+                    if (changeTimeFrame == 1) {
+                        v1 = o1.getValue().change24h;
+                        v2 = o2.getValue().change24h;
+                    } else if (changeTimeFrame == 2) {
+                        v1 = o1.getValue().change7d;
+                        v2 = o2.getValue().change7d;
+                    }
+                    if(v1 > v2)
                         return (reverseSort) ? 1 : -1;
-                    else if(o1.getValue().change24h < o2.getValue().change24h)
+                    else if(v1 < v2)
                         return (reverseSort) ? -1 : 1;
                     return 0;
                 }
@@ -443,6 +479,14 @@ public class Balance extends Activity {
         SortByValue("price");
     }
 
+    public void ChangeTimeFrame(View v) {
+        changeTimeFrame++;
+        if (changeTimeFrame > 2) {
+            changeTimeFrame = 0;
+        }
+        UpdateDisplay();
+    }
+
     void UpdatePrices() {
         for (ExchangeListing listing : listings.values()) {
             listing.Update();
@@ -461,12 +505,27 @@ public class Balance extends Activity {
         double previousValue = 0;
         for (ExchangeListing listing : listings.values()) {
             totalValue += listing.Value();
-            previousValue += listing.Value() / (1 + (listing.change24h / 100));
+            double change = listing.change1h;
+            if (changeTimeFrame == 1) {
+                change = listing.change24h;
+            } else if (changeTimeFrame == 2) {
+                change = listing.change7d;
+            }
+            previousValue += listing.Value() / (1 + (change / 100));
         }
         ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
 
-        // Update 24 hour change
-        TextView change = (TextView) findViewById(R.id.change24);
+        // Update change title
+        String changeTitle = "1hr Change";
+        if (changeTimeFrame == 1) {
+            changeTitle = "24hr Change";
+        } else if (changeTimeFrame == 2) {
+            changeTitle = "7d Change";
+        }
+        ((TextView) findViewById(R.id.changeTitle)).setText(changeTitle);
+
+        // Update change value
+        TextView change = (TextView) findViewById(R.id.change);
         if (previousValue <= 0) {
             change.setText("+" + String.format("%1$,.2f", 0) + "%");
             change.setTextColor(Color.BLACK);
