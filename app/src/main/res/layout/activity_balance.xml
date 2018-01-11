@@ -41,7 +41,7 @@
             android:id="@+id/addButton"
             android:src="@drawable/add"
             android:clickable="true"
-            android:onClick="EnterCoinName"
+            android:onClick="EnterCoinSymbol"
             android:layout_alignBottom="@+id/title"
             android:contentDescription="@string/newCoin"
             android:layout_toStartOf="@+id/refreshButton"
@@ -228,7 +228,7 @@
             android:padding="10dp"
             android:background="@color/primary"
             android:textColor="#ffffff"
-            android:text="@string/enterCoinName" />
+            android:text="@string/enterCoinSymbol" />
 
         <com.colerobinette.cryptowatch.BalanceEditText
             android:layout_width="match_parent"
@@ -242,7 +242,7 @@
             android:imeOptions="actionDone"
             android:textColor="@color/text_primary"
             android:layout_below="@+id/AddCoinTitle"
-            android:inputType="textPersonName" />
+            android:inputType="textNoSuggestions|textCapCharacters" />
     </RelativeLayout>
 
     <RelativeLayout

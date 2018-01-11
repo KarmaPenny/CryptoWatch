@@ -27,6 +27,8 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -41,97 +43,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-class ExchangeListing {
-    public String name;
-    public String symbol;
-    public double change1h;
-    public double change24h;
-    public double change7d;
-    public double balance;
-    public double price;
-
-    public ExchangeListing() {
-        this.name = "";
-        this.symbol = "";
-        this.balance = 0;
-        this.price = 0;
-    }
-
-    public ExchangeListing(String fromString) {
-        String[] parts = fromString.split(",");
-        name = parts[0];
-        symbol = parts[1];
-        change24h = Double.parseDouble(parts[2]);
-        balance = Double.parseDouble(parts[3]);
-        price = Double.parseDouble(parts[4]);
-    }
-
-    public void Update() {
-        try {
-            // get iota price from special location
-            URL url = new URL("https://api.coinmarketcap.com/v1/ticker/" + name + "/");
-            InputStream inputStream = url.openStream();
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-            String jsonString = "";
-            String line;
-            while ((line = in.readLine()) != null) {
-                jsonString += line;
-            }
-            JSONObject result = new JSONObject(jsonString.substring(2, jsonString.length() - 1));
-            in.close();
-
-            price = result.getDouble("price_usd");
-            change1h = result.getDouble("percent_change_1h");
-            change24h = result.getDouble("percent_change_24h");
-            change7d = result.getDouble("percent_change_7d");
-            symbol = result.getString("symbol");
-
-            File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + name + ".png");
-            if (!file.exists()) {
-                URL iconUrl = new URL("https://files.coinmarketcap.com/static/img/coins/128x128/" + name + ".png");
-                InputStream in2 = new BufferedInputStream(iconUrl.openStream());
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buf = new byte[1024];
-                int n = 0;
-                while (-1 != (n = in2.read(buf))) {
-                    out.write(buf, 0, n);
-                }
-                out.close();
-                in.close();
-                byte[] response = out.toByteArray();
-
-                FileOutputStream fos = new FileOutputStream(Balance.actContext.getApplicationInfo().dataDir + "/" + name + ".png");
-                fos.write(response);
-                fos.close();
-            }
-        } catch (Exception e) {
-            Log.e("UpdatePrices", e.toString());
-        }
-    }
-
-    public double Value() {
-        return price * balance;
-    }
-
-    public String ToString() {
-        String value = "";
-        value += name;
-        value += ",";
-        value += symbol;
-        value += ",";
-        value += String.valueOf(change24h);
-        value += ",";
-        value += String.valueOf(balance);
-        value += ",";
-        value += String.valueOf(price);
-        value += ",";
-        value += String.valueOf(change1h);
-        value += ",";
-        value += String.valueOf(change7d);
-        return value;
-    }
-}
-
 class BalanceAdapter extends BaseAdapter {
     private LayoutInflater inflater;
 
@@ -141,12 +52,12 @@ class BalanceAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return Balance.listings.size();
+        return Balance.trackedSymbols.size();
     }
 
     @Override
     public Object getItem(int index) {
-        return Balance.listings.values().toArray()[index];
+        return Balance.trackedSymbols.get(index);
     }
 
     @Override
@@ -156,42 +67,51 @@ class BalanceAdapter extends BaseAdapter {
 
     @Override
     public View getView(final int index, View convertView, ViewGroup parent) {
-        // get the balance associated with this listview item
-        ExchangeListing listing = (ExchangeListing) getItem(index);
+        // get the symbol for this index
+        String symbol = (String) getItem(index);
 
-         // get the view associated with this listview item
+        // get the view associated with this listview item
         View view = inflater.inflate(R.layout.list_item_balance, parent, false);
 
-        // set the icon of the listview item
-        File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + listing.name + ".png");
-        Uri uri = Uri.fromFile(file);
-        ((ImageView) view.findViewById(R.id.coinIcon)).setImageURI(uri);
+        try {
+            // set the symbol text
+            ((TextView) view.findViewById(R.id.coinName)).setText(symbol);
 
-        // set all the text of the listview item
-        ((TextView) view.findViewById(R.id.coinName)).setText(listing.symbol);
-        ((TextView) view.findViewById(R.id.coinPrice)).setText("$" + String.format("%1$,.2f", listing.price));
-        ((TextView) view.findViewById(R.id.coinBalance)).setText(String.format("%1$.3f", listing.balance));
-        ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", listing.Value()));
+            // set the holdings text
+            Double holdings = Balance.data.getJSONObject("trackedCoins").getJSONObject(symbol).getDouble("holdings");
+            ((TextView) view.findViewById(R.id.coinBalance)).setText(String.format("%1$.3f", holdings));
 
-        // get change of current timeframe
-        double change = listing.change1h;
-        if (Balance.changeTimeFrame == 1) {
-            change = listing.change24h;
-        } else if (Balance.changeTimeFrame == 2) {
-            change = listing.change7d;
-        }
+            // get the coin info for this coin
+            JSONObject coinInfo = Balance.data.getJSONObject("coins").getJSONObject(symbol);
 
-        // set change text
-        TextView changeText = (TextView) view.findViewById(R.id.percentChange);
-        if (change > 0) {
-            changeText.setText("+" + String.format("%1$,.2f", change) + "%");
-            changeText.setTextColor(Color.rgb(0, 150, 0));
-        } else if (change < 0) {
-            changeText.setText(String.format("%1$,.2f", change) + "%");
-            changeText.setTextColor(Color.RED);
-        } else {
-            changeText.setText("+" + String.format("%1$,.2f", change) + "%");
-            changeText.setTextColor(Color.BLACK);
+            // set the icon of the listview item
+            String id = coinInfo.getString("id");
+            File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + id + ".png");
+            Uri uri = Uri.fromFile(file);
+            ((ImageView) view.findViewById(R.id.coinIcon)).setImageURI(uri);
+
+            // set the price text
+            Double price = coinInfo.getDouble("price_usd");
+            ((TextView) view.findViewById(R.id.coinPrice)).setText("$" + String.format("%1$,.2f", price));
+
+            // set the value of the holdings text
+            ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", price * holdings));
+
+            // set the percent changed text
+            double change = coinInfo.getDouble(Balance.data.getString("timeFrame"));
+            TextView changeText = (TextView) view.findViewById(R.id.percentChange);
+            if (change > 0) {
+                changeText.setText("+" + String.format("%1$,.2f", change) + "%");
+                changeText.setTextColor(Color.rgb(0, 150, 0));
+            } else if (change < 0) {
+                changeText.setText(String.format("%1$,.2f", change) + "%");
+                changeText.setTextColor(Color.RED);
+            } else {
+                changeText.setText("+" + String.format("%1$,.2f", change) + "%");
+                changeText.setTextColor(Color.BLACK);
+            }
+        } catch (JSONException e) {
+            Log.e("display", e.getMessage());
         }
 
         return view;
@@ -200,45 +120,50 @@ class BalanceAdapter extends BaseAdapter {
 
 public class Balance extends Activity {
     public static BalanceAdapter balanceAdapter = null;
-    static String SelectedCoin = "";
-    public static Map<String, ExchangeListing> listings = new LinkedHashMap<>();
-    public static double totalValue = 0;
     public static Context actContext;
 
-    public static int changeTimeFrame = 1;
-    public static String sortBy = "coin";
-    public static boolean reverseSort = false;
-    public static boolean paused = false;
-    public static boolean updating = false;
+    public static LinkedList<String> trackedSymbols = new LinkedList<>(); // sorted list of tracked symbols
+    static String SelectedCoin = ""; // symbol of the selected coin
+    public static boolean paused = false; // prevents updating when not active
+    public static boolean updating = false; // used to prevent concurrent updates
+    public static long updateDelay = 60000; // milliseconds between updates
+
+    public static JSONObject data = new JSONObject(); // all app data for easy saving/loading
 
     public static void Load(Context context) {
         try {
-            // load balances from file
-            InputStream inputStream = context.openFileInput("listings.txt");
+            // set defaults
+            data.put("sortBy", "coin");
+            data.put("sortDesc", false);
+            data.put("timeFrame", "percent_change_24h");
+            data.put("coins", new JSONObject());
+            data.put("trackedCoins", new JSONObject());
+
+            // load data from file
+            InputStream inputStream = context.openFileInput("data.json");
             if ( inputStream != null ) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String line = "";
-                while ((line = bufferedReader.readLine()) != null ) {
-                    ExchangeListing listing = new ExchangeListing(line);
-                    listings.put(listing.name, listing);
-                }
+                data = new JSONObject(bufferedReader.readLine());
                 inputStream.close();
             }
 
-            // load sort settings
-            inputStream = context.openFileInput("sort.txt");
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String line = bufferedReader.readLine();
-
-                String[] parts = line.split(",");
-                sortBy = parts[0];
-                reverseSort = Boolean.parseBoolean(parts[1]);
-
-                inputStream.close();
-            }
+            // load from old save file format
+//            String line = "";
+//            inputStream = context.openFileInput("listings.txt");
+//            if ( inputStream != null ) {
+//                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+//                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+//                while ((line = bufferedReader.readLine()) != null) {
+//                    String[] parts = line.split(",");
+//                    String symbol = parts[1];
+//                    double holdings = Double.parseDouble(parts[3]);
+//                    JSONObject coin = new JSONObject();
+//                    coin.put("holdings", holdings);
+//                    data.getJSONObject("trackedCoins").put(symbol, coin);
+//                }
+//                inputStream.close();
+//            }
         }
         catch (Exception e) {
             Log.e("BalancesLoad", e.toString());
@@ -247,16 +172,9 @@ public class Balance extends Activity {
 
     public static void Save(Context context) {
         try {
-            // save balances to file
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("listings.txt", Context.MODE_PRIVATE));
-            for (ExchangeListing listing : listings.values()) {
-                outputStreamWriter.write(listing.ToString() + "\n");
-            }
-            outputStreamWriter.close();
-
-            // save sort settings to file
-            outputStreamWriter = new OutputStreamWriter(context.openFileOutput("sort.txt", Context.MODE_PRIVATE));
-            outputStreamWriter.write(sortBy + "," + reverseSort);
+            // save data to file
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("data.json", Context.MODE_PRIVATE));
+            outputStreamWriter.write(data.toString());
             outputStreamWriter.close();
         }
         catch (IOException e) {
@@ -270,9 +188,13 @@ public class Balance extends Activity {
     }
 
     public void LookupSelected() {
-        ExchangeListing listing = listings.get(SelectedCoin);
-        Intent intent= new Intent(Intent.ACTION_VIEW, Uri.parse("https://coinmarketcap.com/currencies/" + listing.name + "/"));
-        startActivity(intent);
+        try {
+            String id = data.getJSONObject("coins").getJSONObject(SelectedCoin).getString("id");
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://coinmarketcap.com/currencies/" + id));
+            startActivity(intent);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     public void ToggleInput(boolean toggle) {
@@ -305,7 +227,7 @@ public class Balance extends Activity {
         }
     }
 
-    public void EnterCoinName(View v) {
+    public void EnterCoinSymbol(View v) {
         // set the edit title and erase the balance input text
         ((TextView) findViewById(R.id.coinInput)).setText("");
 
@@ -323,22 +245,17 @@ public class Balance extends Activity {
     }
 
     public void AddCoin() {
-        // update listing with new balance
-        String coinName = ((TextView) findViewById(R.id.coinInput)).getText().toString().replace(" ", "-");
-        if (!listings.containsKey(coinName)) {
-            ExchangeListing listing = new ExchangeListing();
-            listing.name = coinName;
-            listings.put(coinName, listing);
-        }
+        // get symbol from coin input box
+        String symbol = ((TextView) findViewById(R.id.coinInput)).getText().toString();
 
         // Close balance box
         CloseNewCoinBox();
 
-        // update listings
-        Update(coinName);
+        // Download the icon for this coin
+        DownloadIcon(symbol);
 
         // prompt for balance input
-        SelectedCoin = coinName;
+        SelectedCoin = symbol;
         EditSelected();
     }
 
@@ -358,12 +275,16 @@ public class Balance extends Activity {
     }
 
     public void DeleteSelected(View v) {
-        ExchangeListing listing = listings.get(SelectedCoin);
-        File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + listing.name + ".png");
+        // delete the coin icon
+        File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + SelectedCoin + ".png");
         if (file.exists()) {
             file.delete();
         }
-        listings.remove(listing.name);
+
+        // remove from tracked coins list
+        try {
+            data.getJSONObject("trackedCoins").remove(SelectedCoin);
+        } catch (JSONException e) {}
 
         CloseBalanceEditBox();
 
@@ -371,10 +292,8 @@ public class Balance extends Activity {
     }
 
     public void EditSelected() {
-        ExchangeListing listing = listings.get(SelectedCoin);
-
         // set the edit title and erase the balance input text
-        ((TextView) findViewById(R.id.editTitle)).setText("Enter " + listing.name.toUpperCase() + " Holdings");
+        ((TextView) findViewById(R.id.editTitle)).setText("Enter " + SelectedCoin + " Holdings");
         ((TextView) findViewById(R.id.balanceInput)).setText("");
 
         // disable input
@@ -391,10 +310,22 @@ public class Balance extends Activity {
     }
 
     public void SaveBalance() {
-        // update listing with new balance
-        ExchangeListing listing = listings.get(SelectedCoin);
+        // get holdings from input box
         String balance = ((TextView) findViewById(R.id.balanceInput)).getText().toString();
-        listing.balance = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
+
+        // add the holdings input to the previous holdings
+        try {
+            double prevHoldings = 0;
+            if (data.getJSONObject("trackedCoins").has(SelectedCoin)) {
+                prevHoldings = data.getJSONObject("trackedCoins").getJSONObject(SelectedCoin).getDouble("holdings");
+            }
+
+            double newHoldings = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
+
+            JSONObject coin = new JSONObject();
+            coin.put("holdings", prevHoldings + newHoldings);
+            data.getJSONObject("trackedCoins").put(SelectedCoin, coin);
+        } catch (JSONException e) {}
 
         // Close balance box
         CloseBalanceEditBox();
@@ -407,63 +338,85 @@ public class Balance extends Activity {
         Update();
     }
 
-    public void SortListings() {
-        Comparator comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
-            public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                if (reverseSort) {
-                    return (o2.getValue().name).compareTo(o1.getValue().name);
-                }
-                return (o1.getValue().name).compareTo(o2.getValue().name);
+    void Sort() {
+        try {
+            trackedSymbols.clear();
+            JSONArray symbols = Balance.data.getJSONObject("trackedCoins").names();
+            for (int i = 0; i < symbols.length(); i++) {
+                trackedSymbols.add(symbols.getString(i));
             }
-        };
-        if (sortBy.equals("holdings")) {
-            comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
-                public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                    if(o1.getValue().Value() > o2.getValue().Value())
-                        return (reverseSort) ? 1 : -1;
-                    else if(o1.getValue().Value() < o2.getValue().Value())
-                        return (reverseSort) ? -1 : 1;
-                    return 0;
+
+            Comparator comparator = new Comparator<String>() {
+                @Override
+                public int compare(String lhs, String rhs) {
+                    int result = lhs.compareTo(rhs);
+                    try {
+                        if (data.getBoolean("sortDesc")) {
+                            return result * -1;
+                        }
+                    } catch (JSONException e) {}
+                    return result;
                 }
             };
-        } else if (sortBy.equals("price")) {
-            comparator = new Comparator<Map.Entry<String, ExchangeListing>>() {
-                public int compare(Map.Entry<String, ExchangeListing> o1, Map.Entry<String, ExchangeListing> o2) {
-                    double v1 = o1.getValue().change1h;
-                    double v2 = o2.getValue().change1h;
-                    if (changeTimeFrame == 1) {
-                        v1 = o1.getValue().change24h;
-                        v2 = o2.getValue().change24h;
-                    } else if (changeTimeFrame == 2) {
-                        v1 = o1.getValue().change7d;
-                        v2 = o2.getValue().change7d;
+            if (data.getString("sortBy").equals("holdings")) {
+                comparator = new Comparator<String>() {
+                    @Override
+                    public int compare(String lhs, String rhs) {
+                        int result = 0;
+                        try {
+                            double price1 = data.getJSONObject("coins").getJSONObject(lhs).getDouble("price_usd");
+                            double price2 = data.getJSONObject("coins").getJSONObject(rhs).getDouble("price_usd");
+                            double holdings1 = data.getJSONObject("trackedCoins").getJSONObject(lhs).getDouble("holdings");
+                            double holdings2 = data.getJSONObject("trackedCoins").getJSONObject(rhs).getDouble("holdings");
+                            double value1 = price1 * holdings1;
+                            double value2 = price2 * holdings2;
+
+                            result = Double.compare(value1, value2);
+                            if (data.getBoolean("sortDesc")) {
+                                result *= -1;
+                            }
+                        } catch (JSONException e) {}
+                        return result;
                     }
-                    if(v1 > v2)
-                        return (reverseSort) ? 1 : -1;
-                    else if(v1 < v2)
-                        return (reverseSort) ? -1 : 1;
-                    return 0;
-                }
-            };
-        }
+                };
+            } else if (data.getString("sortBy").equals("price")) {
+                comparator = new Comparator<String>() {
+                    @Override
+                    public int compare(String lhs, String rhs) {
+                        int result = 0;
+                        try {
+                            String timeFrame = data.getString("timeFrame");
+                            double change1 = data.getJSONObject("coins").getJSONObject(lhs).getDouble(timeFrame);
+                            double change2 = data.getJSONObject("coins").getJSONObject(rhs).getDouble(timeFrame);
 
-        List<Map.Entry<String, ExchangeListing>> list = new LinkedList<>(listings.entrySet());
-        Collections.sort(list, comparator);
+                            result = Double.compare(change1, change2);
+                            if (data.getBoolean("sortDesc")) {
+                                result *= -1;
+                            }
+                        } catch (JSONException e) {}
+                        return result;
+                    }
+                };
+            }
 
-        Map<String, ExchangeListing> result = new LinkedHashMap<>();
-        for (Map.Entry<String, ExchangeListing> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-        listings = result;
+            Collections.sort(trackedSymbols, comparator);
+        } catch (JSONException e) {}
     }
 
     public void SortByValue(String value) {
-        if (sortBy == value) {
-            reverseSort = !reverseSort;
-        } else {
-            sortBy = value;
-            reverseSort = false;
-        }
+        try {
+            if (data.getString("sortBy") == value) {
+                boolean reverseSort = data.getBoolean("sortDesc");
+                data.put("sortDesc", !reverseSort);
+            } else {
+                data.put("sortBy", value);
+                if (value == "coin") {
+                    data.put("sortDesc", false);
+                } else {
+                    data.put("sortDesc", true);
+                }
+            }
+        } catch (JSONException e) {}
         UpdateDisplay();
     }
 
@@ -480,67 +433,75 @@ public class Balance extends Activity {
     }
 
     public void ChangeTimeFrame(View v) {
-        changeTimeFrame++;
-        if (changeTimeFrame > 2) {
-            changeTimeFrame = 0;
+        try {
+            String value = data.getString("timeFrame");
+            if (value.equals("percent_change_1h")) {
+                data.put("timeFrame", "percent_change_24h");
+            } else if (value.equals("percent_change_24h")) {
+                data.put("timeFrame", "percent_change_7d");
+            } else if (value.equals("percent_change_7d")) {
+                data.put("timeFrame", "percent_change_1h");
+            }
+        } catch (JSONException e) {
+            Log.d("TIMEFRAME", e.getMessage());
         }
         UpdateDisplay();
     }
 
-    void UpdatePrices() {
-        for (ExchangeListing listing : listings.values()) {
-            listing.Update();
-        }
-    }
-
     void UpdateDisplay() {
-        // resort listings
-        SortListings();
+        try {
+            // build a sorted list of tracked symbols
+            Sort();
 
-        // save data
-        Save(this);
+            // save data
+            Save(this);
 
-        // Update total value
-        totalValue = 0;
-        double previousValue = 0;
-        for (ExchangeListing listing : listings.values()) {
-            totalValue += listing.Value();
-            double change = listing.change1h;
-            if (changeTimeFrame == 1) {
-                change = listing.change24h;
-            } else if (changeTimeFrame == 2) {
-                change = listing.change7d;
+            // Update total value and previous value (used for percent change)
+            double totalValue = 0;
+            double previousValue = 0;
+
+            String timeFrame = data.getString("timeFrame");
+            JSONArray trackedCoins = data.getJSONObject("trackedCoins").names();
+            for (int i = 0; i < trackedCoins.length(); i++) {
+                String symbol = trackedCoins.getString(i);
+                double holdings = data.getJSONObject("trackedCoins").getJSONObject(symbol).getDouble("holdings");
+                double price = data.getJSONObject("coins").getJSONObject(symbol).getDouble("price_usd");
+                double change = data.getJSONObject("coins").getJSONObject(symbol).getDouble(timeFrame);
+
+                totalValue += price * holdings;
+                previousValue += price * holdings / (1 + (change / 100));
             }
-            previousValue += listing.Value() / (1 + (change / 100));
-        }
-        ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
+            ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
 
-        // Update change title
-        String changeTitle = "1hr Change";
-        if (changeTimeFrame == 1) {
-            changeTitle = "24hr Change";
-        } else if (changeTimeFrame == 2) {
-            changeTitle = "7d Change";
-        }
-        ((TextView) findViewById(R.id.changeTitle)).setText(changeTitle);
+            // Update change title
+            String changeTitle = "1hr Change";
+            if (data.getString("timeFrame").equals("percent_change_24h")) {
+                changeTitle = "24hr Change";
+            } else if (data.getString("timeFrame").equals("percent_change_7d")) {
+                changeTitle = "7d Change";
+            }
+            ((TextView) findViewById(R.id.changeTitle)).setText(changeTitle);
 
-        // Update change value
-        TextView change = (TextView) findViewById(R.id.change);
-        if (previousValue <= 0) {
-            change.setText("+" + String.format("%1$,.2f", 0) + "%");
-            change.setTextColor(Color.BLACK);
-        } else {
-            double change24 = 100 * (totalValue - previousValue) / previousValue;
-            if (change24 > 0) {
-                change.setText("+" + String.format("%1$,.2f", change24) + "%");
-                change.setTextColor(Color.rgb(0, 150, 0));
-            } else if (change24 < 0) {
-                change.setText(String.format("%1$,.2f", change24) + "%");
-                change.setTextColor(Color.RED);
+            // Update change value
+            TextView changeText = (TextView) findViewById(R.id.change);
+            if (previousValue <= 0) {
+                changeText.setText("+" + String.format("%1$,.2f", 0) + "%");
+                changeText.setTextColor(Color.BLACK);
             } else {
-                change.setText("+" + String.format("%1$,.2f", change24) + "%");
-                change.setTextColor(Color.BLACK);
+                double percentChange = 100 * (totalValue - previousValue) / previousValue;
+                if (percentChange > 0) {
+                    changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
+                    changeText.setTextColor(Color.rgb(0, 150, 0));
+                } else if (percentChange < 0) {
+                    changeText.setText(String.format("%1$,.2f", percentChange) + "%");
+                    changeText.setTextColor(Color.RED);
+                } else {
+                    changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
+                    changeText.setTextColor(Color.BLACK);
+                }
             }
+        } catch (Exception e) {
+            Log.e("UpdateDisplay", e.getMessage());
         }
 
         // update list views
@@ -556,45 +517,27 @@ public class Balance extends Activity {
 
     void RecordUpdateTime() {
         try {
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(this.openFileOutput("last_update.txt", Context.MODE_PRIVATE));
             Date now = Calendar.getInstance().getTime();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String last_update = df.format(now);
-            outputStreamWriter.write(last_update);
-            outputStreamWriter.close();
-        }
-        catch (IOException e) {
-            Log.e("RecordUpdateTime", e.toString());
+            data.put("lastUpdate", df.format(now));
+        } catch (JSONException e) {
+            Log.e("Update Time", e.getMessage());
         }
     }
 
     boolean ShouldUpdate() {
-        Calendar c = Calendar.getInstance();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date last_update;
-
-        //read last update time
         try {
-            InputStream inputStream = this.openFileInput("last_update.txt");
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                last_update = df.parse(bufferedReader.readLine());
-                inputStream.close();
-            } else {
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date last_update = df.parse(data.getString("lastUpdate"));
+            Date next_update = new Date(last_update.getTime() + updateDelay);
+            Date now = Calendar.getInstance().getTime();
+            if (now.after(next_update)) {
                 return true;
             }
-        }
-        catch (Exception e) {
+            return false;
+        } catch (Exception e) {
             return true;
         }
-
-        Date next_update = new Date(last_update.getTime() + 60000);
-        Date now = Calendar.getInstance().getTime();
-        if (now.after(next_update)) {
-            return true;
-        }
-        return false;
     }
 
     void Update() {
@@ -614,7 +557,30 @@ public class Balance extends Activity {
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... params) {
-                    UpdatePrices();
+                    try {
+                        // download all coin info from coinmarketcap.com
+                        URL url = new URL("https://api.coinmarketcap.com/v1/ticker/?limit=0");
+                        InputStream inputStream = url.openStream();
+                        BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+                        StringBuilder jsonBuilder = new StringBuilder("");
+                        String line;
+                        while ((line = in.readLine()) != null) {
+                            jsonBuilder.append(line);
+                        }
+                        JSONObject result = new JSONObject("{\"coins\":" + jsonBuilder.toString() + "}");
+                        in.close();
+
+                        // add coin info to coin data
+                        JSONArray coinsInfo = result.getJSONArray("coins");
+                        JSONObject coinsData = new JSONObject();
+                        for (int i = 0; i < coinsInfo.length(); i++) {
+                            JSONObject coinInfo = coinsInfo.getJSONObject(i);
+                            coinsData.put(coinInfo.getString("symbol"), coinInfo);
+                        }
+                        data.put("coins", coinsData);
+                    } catch (Exception e) {
+                        Log.e("UpdatePrices", e.toString());
+                    }
                     return null;
                 }
 
@@ -627,11 +593,36 @@ public class Balance extends Activity {
         }
     }
 
-    void Update(final String coinName) {
+    void DownloadIcon(final String symbol) {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                listings.get(coinName).Update();
+                try {
+                    // get id of coin with this symbol
+                    String id = data.getJSONObject("coins").getJSONObject(symbol).getString("id");
+
+                    // download the icon if we do not already have a copy
+                    File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + id + ".png");
+                    if (!file.exists()) {
+                        URL iconUrl = new URL("https://files.coinmarketcap.com/static/img/coins/128x128/" + id + ".png");
+                        InputStream in = new BufferedInputStream(iconUrl.openStream());
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        byte[] buf = new byte[1024];
+                        int n = 0;
+                        while (-1 != (n = in.read(buf))) {
+                            out.write(buf, 0, n);
+                        }
+                        out.close();
+                        in.close();
+                        byte[] response = out.toByteArray();
+
+                        FileOutputStream fos = new FileOutputStream(Balance.actContext.getApplicationInfo().dataDir + "/" + id + ".png");
+                        fos.write(response);
+                        fos.close();
+                    }
+                } catch (Exception e) {
+                    Log.e("Failed to download icon", e.getMessage());
+                }
                 return null;
             }
 
@@ -653,7 +644,7 @@ public class Balance extends Activity {
                 }
                 AutoUpdate();
             }
-        }, 60000);
+        }, updateDelay);
     }
 
     @Override
@@ -672,7 +663,7 @@ public class Balance extends Activity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-                SelectedCoin = ((ExchangeListing) listings.values().toArray()[position]).name;
+                SelectedCoin = (String) balanceAdapter.getItem(position);
                 LookupSelected();
             }
         });
@@ -680,7 +671,7 @@ public class Balance extends Activity {
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapter, View v, int position, long id) {
-                SelectedCoin = ((ExchangeListing) listings.values().toArray()[position]).name;
+                SelectedCoin = (String) balanceAdapter.getItem(position);
                 EditSelected();
                 return true;
             }

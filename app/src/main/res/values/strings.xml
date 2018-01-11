@@ -21,9 +21,9 @@
     <string name="Coin">Coin</string>
     <string name="Holdings">Holdings</string>
     <string name="Price">Price</string>
-    <string name="enterCoinName">Enter Coin Name</string>
+    <string name="enterCoinSymbol">Enter Coin Symbol</string>
     <string name="coinicon">coinIcon</string>
-    <string name="miota">MIOTA</string>
+    <string name="miota">ERROR</string>
     <string name="delete">Delete Coin</string>
     <string name="plus">+</string>
     <string name="refresh">Refresh</string>
