@@ -144,25 +144,34 @@
                 android:gravity="left|center_vertical"
                 android:textSize="20sp"
                 android:textColor="@color/text_primary"
-                android:layout_alignEnd="@+id/changeTitle"
                 android:layout_below="@+id/changeTitle"
-                android:paddingTop="5dp" />
+                android:paddingTop="5dp"
+                android:layout_toStartOf="@+id/portfolioChangeArrow" />
+
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/portfolioChangeArrow"
+                android:src="@drawable/arrow_green"
+                android:layout_below="@+id/changeTitle"
+                android:layout_alignBottom="@+id/change"
+                android:layout_alignParentEnd="true"
+                android:paddingTop="5dp"
+                android:layout_marginLeft="3dp" />
         </RelativeLayout>
 
     </RelativeLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:id="@+id/columnHeaders"
         android:background="#555555"
-        android:paddingLeft="15dp"
-        android:paddingRight="15dp"
         android:layout_below="@+id/portfolioDisplay">
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="58dp"
             android:layout_height="match_parent"
             android:text="@string/Coin"
             android:id="@+id/sortCoinButton"
@@ -170,10 +179,11 @@
             android:layout_weight=".1"
             android:textColor="@color/text_header"
             android:textSize="15sp"
-            android:onClick="SortByCoin" />
+            android:onClick="SortByCoin"
+            android:paddingLeft="15dp" />
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:text="@string/Holdings"
             android:id="@+id/sortHoldingsButton"
@@ -181,10 +191,12 @@
             android:layout_weight=".45"
             android:textColor="@color/text_header"
             android:textSize="15sp"
-            android:onClick="SortByHoldings" />
+            android:onClick="SortByHoldings"
+            android:layout_toStartOf="@+id/sortPriceButton"
+            android:layout_toEndOf="@+id/sortCoinButton" />
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="168dp"
             android:layout_height="match_parent"
             android:text="@string/Price"
             android:id="@+id/sortPriceButton"
@@ -192,9 +204,11 @@
             android:layout_weight=".45"
             android:textColor="@color/text_header"
             android:textSize="15sp"
-            android:onClick="SortByPrice" />
+            android:onClick="SortByPrice"
+            android:layout_alignParentEnd="true"
+            android:paddingRight="15dp" />
 
-    </LinearLayout>
+    </RelativeLayout>
 
     <ListView
         android:layout_width="fill_parent"

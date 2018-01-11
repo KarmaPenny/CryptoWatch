@@ -110,6 +110,14 @@ class BalanceAdapter extends BaseAdapter {
                 changeText.setText("+" + String.format("%1$,.2f", change) + "%");
                 changeText.setTextColor(Color.BLACK);
             }
+
+            // set change arrow
+            if (change < 0) {
+                ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_red);
+            } else {
+                ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_green);
+            }
+
         } catch (JSONException e) {
             Log.e("display", e.getMessage());
         }
@@ -498,6 +506,13 @@ public class Balance extends Activity {
                 } else {
                     changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
                     changeText.setTextColor(Color.BLACK);
+                }
+
+                // set portfolio change arrow
+                if (percentChange < 0) {
+                    ((ImageView) findViewById(R.id.portfolioChangeArrow)).setImageResource(R.drawable.arrow_red);
+                } else {
+                    ((ImageView) findViewById(R.id.portfolioChangeArrow)).setImageResource(R.drawable.arrow_green);
                 }
             }
         } catch (Exception e) {
