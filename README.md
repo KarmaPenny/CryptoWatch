@@ -7,7 +7,7 @@ CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfo
 
 1.) Click the plus icon in the top right corner to add a coin to your portfolio.
 
-2.) Enter the name of the coin as it appears on coinmarketcap.com.
+2.) Enter the symbol of the coin as it appears on coinmarketcap.com.
 
 3.) Set your holdings for the new coin.
 
@@ -16,6 +16,14 @@ CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfo
 1.) Long press the coin you want to change.
 
 2.) Enter the new holdings amount.
+
+### Adding/Subtracting from a Coin's Holdings
+
+1.) Click the plus icon in the top right corner to add a coin to your portfolio.
+
+2.) Enter the symbol of the coin as it appears on coinmarketcap.com.
+
+3.) Enter the amount to add to holdings. (Negative values subtract)
 
 ### Remove a Coin
 
