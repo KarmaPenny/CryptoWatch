@@ -413,7 +413,7 @@ public class Balance extends Activity {
 
     public void SortByValue(String value) {
         try {
-            if (data.getString("sortBy") == value) {
+            if (data.getString("sortBy").equals(value)) {
                 boolean sortDesc = data.getBoolean("sortDesc");
                 data.put("sortDesc", !sortDesc);
             } else {
