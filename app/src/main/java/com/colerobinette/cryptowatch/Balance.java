@@ -359,7 +359,7 @@ public class Balance extends Activity {
                 public int compare(String lhs, String rhs) {
                     int result = lhs.compareTo(rhs);
                     try {
-                        if (data.getBoolean("sortDesc")) {
+                        if (!data.getBoolean("sortDesc")) {
                             return result * -1;
                         }
                     } catch (JSONException e) {}
@@ -414,15 +414,11 @@ public class Balance extends Activity {
     public void SortByValue(String value) {
         try {
             if (data.getString("sortBy") == value) {
-                boolean reverseSort = data.getBoolean("sortDesc");
-                data.put("sortDesc", !reverseSort);
+                boolean sortDesc = data.getBoolean("sortDesc");
+                data.put("sortDesc", !sortDesc);
             } else {
                 data.put("sortBy", value);
-                if (value == "coin") {
-                    data.put("sortDesc", false);
-                } else {
-                    data.put("sortDesc", true);
-                }
+                data.put("sortDesc", true);
             }
         } catch (JSONException e) {}
         UpdateDisplay();
@@ -458,16 +454,31 @@ public class Balance extends Activity {
 
     void UpdateDisplay() {
         try {
-            // build a sorted list of tracked symbols
-            Sort();
-
             // save data
             Save(this);
+
+            // build a sorted list of tracked symbols for displaying
+            Sort();
+
+            // update sort arrows
+            TextView coinHeader = (TextView) findViewById(R.id.sortCoinButton);
+            TextView holdingsHeader = (TextView) findViewById(R.id.sortHoldingsButton);
+            TextView priceHeader = (TextView) findViewById(R.id.sortPriceButton);
+            coinHeader.setText("Coin");
+            holdingsHeader.setText("Holdings");
+            priceHeader.setText("Price");
+            String arrow = (data.getBoolean("sortDesc")) ? "↓" : "↑";
+            if (data.getString("sortBy").equals("coin")) {
+                coinHeader.setText("Coin" + arrow);
+            } else if (data.getString("sortBy").equals("holdings")) {
+                holdingsHeader.setText("Holdings" + arrow);
+            } else if (data.getString("sortBy").equals("price")) {
+                priceHeader.setText("Price" + arrow);
+            }
 
             // Update total value and previous value (used for percent change)
             double totalValue = 0;
             double previousValue = 0;
-
             String timeFrame = data.getString("timeFrame");
             JSONArray trackedCoins = data.getJSONObject("trackedCoins").names();
             for (int i = 0; i < trackedCoins.length(); i++) {

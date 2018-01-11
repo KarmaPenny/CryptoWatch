@@ -18,9 +18,6 @@
         <item>ZEC - ZCash</item>
     </string-array>
     <string name="add_button">New Address</string>
-    <string name="Coin">Coin</string>
-    <string name="Holdings">Holdings</string>
-    <string name="Price">Price</string>
     <string name="enterCoinSymbol">Enter Coin Symbol</string>
     <string name="coinicon">coinIcon</string>
     <string name="miota">ERROR</string>
