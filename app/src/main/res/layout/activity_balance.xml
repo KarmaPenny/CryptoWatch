@@ -41,7 +41,7 @@
             android:id="@+id/addButton"
             android:src="@drawable/add"
             android:clickable="true"
-            android:onClick="EnterCoinSymbol"
+            android:onClick="OpenCoinInputBox"
             android:layout_alignBottom="@+id/title"
             android:contentDescription="@string/newCoin"
             android:layout_toStartOf="@+id/refreshButton"
@@ -304,4 +304,37 @@
 
     </RelativeLayout>
 
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:paddingTop="80dp"
+        android:paddingBottom="80dp"
+        android:paddingLeft="40dp"
+        android:paddingRight="40dp"
+        android:layout_below="@+id/columnHeaders"
+        android:visibility="gone"
+        android:id="@+id/coinSelector">
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="40dp"
+            android:text="Which BAT?"
+            android:id="@+id/chooseCoinTitle"
+            android:gravity="center_vertical"
+            android:layout_weight=".1"
+            android:textColor="@color/text_header"
+            android:textSize="15sp"
+            android:paddingLeft="15dp"
+            android:background="#555555" />
+
+        <ListView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:divider="#cccccc"
+            android:dividerHeight="1dp"
+            android:id="@+id/collidingCoins"
+            android:background="#ffffff"
+            android:layout_below="@+id/chooseCoinTitle" />
+
+    </RelativeLayout>
 </RelativeLayout>
