@@ -254,6 +254,14 @@ public class Balance extends Activity {
                     }
                 }
                 data.put("coins", coins);
+
+                // set defaults if nothing is set
+                if (!data.has("sortDesc")) { data.put("sortDesc", true); }
+                if (!data.has("sortBy")) { data.put("sortBy", "Coin"); }
+                if (!data.has("timeFrame")) { data.put("timeFrame", "percent_change_24h"); }
+                if (!data.has("ids")) { data.put("ids", new JSONObject()); }
+                if (!data.has("coins")) { data.put("coins", new JSONObject()); }
+                if (!data.has("trackedIds")) { data.put("trackedIds", new JSONObject()); }
             }
         }
         catch (Exception e) {
