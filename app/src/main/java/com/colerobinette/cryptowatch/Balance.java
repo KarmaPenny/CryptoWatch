@@ -113,8 +113,10 @@ class BalanceAdapter extends BaseAdapter {
             // set change arrow
             if (change < 0) {
                 ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_red);
-            } else {
+            } else if (change > 0) {
                 ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_green);
+            } else {
+                ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.dash);
             }
 
         } catch (JSONException e) {
@@ -192,15 +194,10 @@ public class Balance extends Activity {
     //endregion
 
     //region SAVE/LOAD
-    static void Load(Context context) {
+    void Load() {
         try {
-            // set defaults
-            data.put("sortBy", "coin");
-            data.put("sortDesc", false);
-            data.put("timeFrame", "percent_change_24h");
-
             // load data from file
-            InputStream inputStream = context.openFileInput("data.json");
+            InputStream inputStream = openFileInput("data.json");
             if ( inputStream != null ) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -208,16 +205,39 @@ public class Balance extends Activity {
                 inputStream.close();
             }
 
+            // load from legacy save file format
+//            String line = "";
+//            inputStream = openFileInput("listings.txt");
+//            if ( inputStream != null ) {
+//                JSONObject trackedIds = new JSONObject();
+//                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+//                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+//                while ((line = bufferedReader.readLine()) != null) {
+//                    String[] parts = line.split(",");
+//                    String symbol = parts[1];
+//                    double holdings = Double.parseDouble(parts[3]);
+//                    String id = data.getJSONObject("ids").getJSONArray(symbol).getString(0);
+//                    JSONObject coin = new JSONObject();
+//                    coin.put("holdings", holdings);
+//                    trackedIds.put(id, coin);
+//                    DownloadIcon(id);
+//                }
+//                data.put("trackedIds", trackedIds);
+//                inputStream.close();
+//            }
+
             // import v1.0 data if it exists
             if (data.has("trackedCoins")) {
                 // convert tracked coins to tracked ids
                 JSONObject trackedIds = new JSONObject();
                 JSONArray symbols = data.getJSONObject("trackedCoins").names();
-                for (int i = 0; i < symbols.length(); i++) {
-                    String symbol = symbols.getString(i);
-                    String id = data.getJSONObject("coins").getJSONObject(symbol).getString("id");
-                    JSONObject trackedInfo = data.getJSONObject("trackedCoins").getJSONObject(symbol);
-                    trackedIds.put(id, trackedInfo);
+                if (symbols != null) {
+                    for (int i = 0; i < symbols.length(); i++) {
+                        String symbol = symbols.getString(i);
+                        String id = data.getJSONObject("coins").getJSONObject(symbol).getString("id");
+                        JSONObject trackedInfo = data.getJSONObject("trackedCoins").getJSONObject(symbol);
+                        trackedIds.put(id, trackedInfo);
+                    }
                 }
                 data.put("trackedIds", trackedIds);
                 data.remove("trackedCoins");
@@ -225,41 +245,26 @@ public class Balance extends Activity {
                 // remap coin info from symbol to id
                 JSONObject coins = new JSONObject();
                 JSONArray keys = data.getJSONObject("coins").names();
-                for (int i = 0; i < keys.length(); i++) {
-                    String key = keys.getString(i);
-                    String id = data.getJSONObject("coins").getJSONObject(key).getString("id");
-                    JSONObject coinInfo = data.getJSONObject("coins").getJSONObject(key);
-                    coins.put(id, coinInfo);
+                if (keys != null) {
+                    for (int i = 0; i < keys.length(); i++) {
+                        String key = keys.getString(i);
+                        String id = data.getJSONObject("coins").getJSONObject(key).getString("id");
+                        JSONObject coinInfo = data.getJSONObject("coins").getJSONObject(key);
+                        coins.put(id, coinInfo);
+                    }
                 }
                 data.put("coins", coins);
             }
-
-            // load from old save file format
-//            String line = "";
-//            inputStream = context.openFileInput("listings.txt");
-//            if ( inputStream != null ) {
-//                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-//                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-//                while ((line = bufferedReader.readLine()) != null) {
-//                    String[] parts = line.split(",");
-//                    String symbol = parts[1];
-//                    double holdings = Double.parseDouble(parts[3]);
-//                    JSONObject coin = new JSONObject();
-//                    coin.put("holdings", holdings);
-//                    data.getJSONObject("trackedCoins").put(symbol, coin);
-//                }
-//                inputStream.close();
-//            }
         }
         catch (Exception e) {
-            Log.e("BalancesLoad", e.toString());
+            Log.e("ERROR", e.getMessage(), e);
         }
     }
 
-    static void Save(Context context) {
+    void Save() {
         try {
             // save data to file
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput("data.json", Context.MODE_PRIVATE));
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("data.json", Context.MODE_PRIVATE));
             outputStreamWriter.write(data.toString());
             outputStreamWriter.close();
         }
@@ -301,6 +306,7 @@ public class Balance extends Activity {
         try {
             trackedIds.clear();
             JSONArray ids = Balance.data.getJSONObject("trackedIds").names();
+            if (ids == null) { return; }
             for (int i = 0; i < ids.length(); i++) {
                 trackedIds.add(ids.getString(i));
             }
@@ -416,30 +422,37 @@ public class Balance extends Activity {
         // Close balance box
         CloseNewCoinBox();
 
+        JSONArray ids = new JSONArray();
         try {
             // get list of ids mapped to this symbol
-            JSONArray ids = data.getJSONObject("ids").getJSONArray(symbol);
+            ids = data.getJSONObject("ids").getJSONArray(symbol);
+        } catch (JSONException e) {
+            Log.e("ERROR", e.getMessage(), e);
+        }
 
-            // if there is only one id mapped to this symbol then prompt for balance input
-            if (ids.length() == 1) {
-                // Set selected coin to the mapped id
+        // if there is only one id mapped to this symbol then prompt for balance input
+        if (ids.length() == 1) {
+            // Set selected coin to the mapped id
+            try {
                 SelectedCoin = ids.getString(0);
-
-                // download the icon for this coin id
-                DownloadIcon(SelectedCoin);
-
-                // open balance box
-                OpenBalanceInputBox();
+            } catch (JSONException e) {
+                Log.e("ERROR", e.getMessage(), e);
             }
-            // if there is more than one mapped id with this symbol
-            else {
-                // set selected coin to the provided symbol
-                SelectedCoin = symbol;
 
-                // prompt user to select which mapped coin to add
-                OpenCoinSelectorBox();
-            }
-        } catch (JSONException e) {}
+            // download the icon for this coin id
+            DownloadIcon(SelectedCoin);
+
+            // open balance box
+            OpenBalanceInputBox();
+        }
+        // if there is more than one mapped id with this symbol
+        else {
+            // set selected coin to the provided symbol
+            SelectedCoin = symbol;
+
+            // prompt user to select which mapped coin to add
+            OpenCoinSelectorBox();
+        }
     }
 
     public void OpenCoinSelectorBox() {
@@ -482,18 +495,17 @@ public class Balance extends Activity {
     }
 
     public void CloseNewCoinBox() {
-        // enable input again
-        ToggleInput(true);
+        // close keyboard
+        EditText editText = (EditText) findViewById(R.id.coinInput);
+        editText.clearFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
 
         // hide the edit box
         findViewById(R.id.newCoinBox).setVisibility(FrameLayout.GONE);
 
-        // close keyboard
-        View view = this.getCurrentFocus();
-        if (view != null) {
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
+        // enable input again
+        ToggleInput(true);
     }
     //endregion
 
@@ -516,7 +528,9 @@ public class Balance extends Activity {
             editText.requestFocus();
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
-        } catch (JSONException e) {}
+        } catch (JSONException e) {
+            Log.e("ERROR", e.getMessage(), e);
+        }
     }
 
     public void DeleteSelected(View v) {
@@ -540,6 +554,9 @@ public class Balance extends Activity {
         // get holdings from input box
         String balance = ((TextView) findViewById(R.id.balanceInput)).getText().toString();
 
+        // Close balance box
+        CloseBalanceEditBox();
+
         // add the holdings input to the previous holdings
         try {
             double prevHoldings = 0;
@@ -552,28 +569,26 @@ public class Balance extends Activity {
             JSONObject coin = new JSONObject();
             coin.put("holdings", prevHoldings + newHoldings);
             data.getJSONObject("trackedIds").put(SelectedCoin, coin);
-        } catch (JSONException e) {}
-
-        // Close balance box
-        CloseBalanceEditBox();
+        } catch (JSONException e) {
+            Log.e("ERROR", e.getMessage(), e);
+        }
 
         // update listings display
         UpdateDisplay();
     }
 
     public void CloseBalanceEditBox() {
-        // enable input again
-        ToggleInput(true);
+        // close keyboard
+        EditText editText = (EditText) findViewById(R.id.balanceInput);
+        editText.clearFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
 
         // hide the edit box
         findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.GONE);
 
-        // close keyboard
-        View view = this.getCurrentFocus();
-        if (view != null) {
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
+        // enable input again
+        ToggleInput(true);
     }
     //endregion
 
@@ -749,7 +764,7 @@ public class Balance extends Activity {
     void UpdateDisplay() {
         try {
             // save data
-            Save(this);
+            Save();
 
             // build a sorted list of tracked symbols for displaying
             Sort();
@@ -775,14 +790,16 @@ public class Balance extends Activity {
             double previousValue = 0;
             String timeFrame = data.getString("timeFrame");
             JSONArray ids = data.getJSONObject("trackedIds").names();
-            for (int i = 0; i < ids.length(); i++) {
-                String id = ids.getString(i);
-                double holdings = data.getJSONObject("trackedIds").getJSONObject(id).getDouble("holdings");
-                double price = data.getJSONObject("coins").getJSONObject(id).getDouble("price_usd");
-                double change = data.getJSONObject("coins").getJSONObject(id).getDouble(timeFrame);
+            if (ids != null) {
+                for (int i = 0; i < ids.length(); i++) {
+                    String id = ids.getString(i);
+                    double holdings = data.getJSONObject("trackedIds").getJSONObject(id).getDouble("holdings");
+                    double price = data.getJSONObject("coins").getJSONObject(id).getDouble("price_usd");
+                    double change = data.getJSONObject("coins").getJSONObject(id).getDouble(timeFrame);
 
-                totalValue += price * holdings;
-                previousValue += price * holdings / (1 + (change / 100));
+                    totalValue += price * holdings;
+                    previousValue += price * holdings / (1 + (change / 100));
+                }
             }
             ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
 
@@ -797,31 +814,29 @@ public class Balance extends Activity {
 
             // Update change value
             TextView changeText = (TextView) findViewById(R.id.change);
-            if (previousValue <= 0) {
-                changeText.setText("+" + String.format("%1$,.2f", 0) + "%");
-                changeText.setTextColor(Color.BLACK);
+            double percentChange = (previousValue == 0) ? 0 : 100 * (totalValue - previousValue) / previousValue;
+            if (percentChange > 0) {
+                changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
+                changeText.setTextColor(Color.rgb(0, 150, 0));
+            } else if (percentChange < 0) {
+                changeText.setText(String.format("%1$,.2f", percentChange) + "%");
+                changeText.setTextColor(Color.RED);
             } else {
-                double percentChange = 100 * (totalValue - previousValue) / previousValue;
-                if (percentChange > 0) {
-                    changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
-                    changeText.setTextColor(Color.rgb(0, 150, 0));
-                } else if (percentChange < 0) {
-                    changeText.setText(String.format("%1$,.2f", percentChange) + "%");
-                    changeText.setTextColor(Color.RED);
-                } else {
-                    changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
-                    changeText.setTextColor(Color.BLACK);
-                }
+                changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
+                changeText.setTextColor(Color.BLACK);
+            }
 
-                // set portfolio change arrow
-                if (percentChange < 0) {
-                    ((ImageView) findViewById(R.id.portfolioChangeArrow)).setImageResource(R.drawable.arrow_red);
-                } else {
-                    ((ImageView) findViewById(R.id.portfolioChangeArrow)).setImageResource(R.drawable.arrow_green);
-                }
+            // set portfolio change arrow
+            ImageView portfolioArrow = (ImageView) findViewById(R.id.portfolioChangeArrow);
+            if (percentChange < 0) {
+                portfolioArrow.setImageResource(R.drawable.arrow_red);
+            } else if (percentChange > 0){
+                portfolioArrow.setImageResource(R.drawable.arrow_green);
+            } else {
+                portfolioArrow.setImageResource(R.drawable.dash);
             }
         } catch (Exception e) {
-            Log.e("UpdateDisplay", e.getMessage());
+            Log.e("UpdateDisplay", e.getMessage(), e);
         }
 
         // update list views
@@ -844,7 +859,7 @@ public class Balance extends Activity {
         setContentView(R.layout.activity_balance);
 
         // load data from file
-        Load(this);
+        Load();
 
         // setup balances list
         ListView listView = (ListView) findViewById(R.id.balancesList);
