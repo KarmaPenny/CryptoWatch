@@ -159,6 +159,8 @@ public class Balance extends Activity {
     static boolean updating = false; // used to prevent concurrent updates
     static long updateDelay = 60000; // milliseconds between updates
     static boolean selectingCoin = false; // used to close the coin selector box with the back button
+
+    static boolean addToExistingBalance = false;
     //endregion
 
     //region DATA ACCESSORS
@@ -473,6 +475,9 @@ public class Balance extends Activity {
             // download the icon for this coin id
             DownloadIcon(SelectedCoin);
 
+            // add to the existing balance
+            addToExistingBalance = true;
+
             // open balance box
             OpenBalanceInputBox();
         }
@@ -510,6 +515,9 @@ public class Balance extends Activity {
         // download the icon for this coin id
         DownloadIcon(SelectedCoin);
 
+        // add to the existing balance
+        addToExistingBalance = true;
+
         // open balance box
         OpenBalanceInputBox();
     }
@@ -543,8 +551,13 @@ public class Balance extends Activity {
     //region BALANCE INPUT
     public void OpenBalanceInputBox() {
         // set the edit title and erase the balance input text
-        ((TextView) findViewById(R.id.editTitle)).setText("Enter " + GetCoinName(SelectedCoin) + " Holdings");
-        ((TextView) findViewById(R.id.balanceInput)).setText("");
+        if (addToExistingBalance) {
+            ((TextView) findViewById(R.id.editTitle)).setText("Add to " + GetCoinName(SelectedCoin) + " Holdings");
+            ((TextView) findViewById(R.id.balanceInput)).setText("");
+        } else {
+            ((TextView) findViewById(R.id.editTitle)).setText("Set " + GetCoinName(SelectedCoin) + " Holdings");
+            ((TextView) findViewById(R.id.balanceInput)).setText(Double.toString(GetCoinHoldings(SelectedCoin)));
+        }
 
         // disable input
         ToggleInput(false);
@@ -555,6 +568,7 @@ public class Balance extends Activity {
         // show keyboard for balance input
         EditText editText = (EditText) findViewById(R.id.balanceInput);
         editText.requestFocus();
+        editText.selectAll();
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
     }
@@ -588,7 +602,11 @@ public class Balance extends Activity {
         double newHoldings = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
 
         // set holdings for selected coin
-        SetCoinHoldings(SelectedCoin, prevHoldings + newHoldings);
+        if (addToExistingBalance) {
+            SetCoinHoldings(SelectedCoin, prevHoldings + newHoldings);
+        } else {
+            SetCoinHoldings(SelectedCoin, newHoldings);
+        }
 
         // update listings display
         UpdateDisplay();
@@ -871,6 +889,7 @@ public class Balance extends Activity {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapter, View v, int position, long id) {
                 SelectedCoin = (String) balanceAdapter.getItem(position);
+                addToExistingBalance = false; // overwrite existing balance
                 OpenBalanceInputBox();
                 return true;
             }
