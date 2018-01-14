@@ -38,10 +38,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 class BalanceAdapter extends BaseAdapter {
     private LayoutInflater inflater;
@@ -73,54 +70,38 @@ class BalanceAdapter extends BaseAdapter {
         // get the view associated with this listview item
         View view = inflater.inflate(R.layout.list_item_balance, parent, false);
 
-        try {
-            // get the coin info for this coin
-            JSONObject coinInfo = Balance.data.getJSONObject("coins").getJSONObject(id);
+        // set the symbol text
+        ((TextView) view.findViewById(R.id.coinName)).setText(Balance.GetCoinSymbol(id));
 
-            // set the symbol text
-            ((TextView) view.findViewById(R.id.coinName)).setText(coinInfo.getString("symbol"));
+        // set the holdings text
+        ((TextView) view.findViewById(R.id.coinBalance)).setText(String.format("%1$.3f", Balance.GetCoinHoldings(id)));
 
-            // set the holdings text
-            Double holdings = Balance.data.getJSONObject("trackedIds").getJSONObject(id).getDouble("holdings");
-            ((TextView) view.findViewById(R.id.coinBalance)).setText(String.format("%1$.3f", holdings));
+        // set the icon of the listview item
+        File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + id + ".png");
+        Uri uri = Uri.fromFile(file);
+        ((ImageView) view.findViewById(R.id.coinIcon)).setImageURI(uri);
 
-            // set the icon of the listview item
-            File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + id + ".png");
-            Uri uri = Uri.fromFile(file);
-            ((ImageView) view.findViewById(R.id.coinIcon)).setImageURI(uri);
+        // set the price text
+        ((TextView) view.findViewById(R.id.coinPrice)).setText("$" + String.format("%1$,.2f", Balance.GetCoinPrice(id)));
 
-            // set the price text
-            Double price = coinInfo.getDouble("price_usd");
-            ((TextView) view.findViewById(R.id.coinPrice)).setText("$" + String.format("%1$,.2f", price));
+        // set the value of the holdings text
+        ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", Balance.GetCoinValue(id)));
 
-            // set the value of the holdings text
-            ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", price * holdings));
-
-            // set the percent changed text
-            double change = coinInfo.getDouble(Balance.data.getString("timeFrame"));
-            TextView changeText = (TextView) view.findViewById(R.id.percentChange);
-            if (change > 0) {
-                changeText.setText("+" + String.format("%1$,.2f", change) + "%");
-                changeText.setTextColor(Color.rgb(0, 150, 0));
-            } else if (change < 0) {
-                changeText.setText(String.format("%1$,.2f", change) + "%");
-                changeText.setTextColor(Color.RED);
-            } else {
-                changeText.setText("+" + String.format("%1$,.2f", change) + "%");
-                changeText.setTextColor(Color.BLACK);
-            }
-
-            // set change arrow
-            if (change < 0) {
-                ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_red);
-            } else if (change > 0) {
-                ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_green);
-            } else {
-                ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.dash);
-            }
-
-        } catch (JSONException e) {
-            Log.e("display", e.getMessage());
+        // set the percent changed text
+        double change = Balance.GetCoinPriceChange(id);
+        TextView changeText = (TextView) view.findViewById(R.id.percentChange);
+        if (change > 0) {
+            changeText.setText("+" + String.format("%1$,.2f", change) + "%");
+            changeText.setTextColor(Color.rgb(0, 150, 0));
+            ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_green);
+        } else if (change < 0) {
+            changeText.setText(String.format("%1$,.2f", change) + "%");
+            changeText.setTextColor(Color.RED);
+            ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.arrow_red);
+        } else {
+            changeText.setText("+" + String.format("%1$,.2f", change) + "%");
+            changeText.setTextColor(Color.BLACK);
+            ((ImageView) view.findViewById(R.id.changeArrow)).setImageResource(R.drawable.dash);
         }
 
         return view;
@@ -136,20 +117,12 @@ class CoinSelectAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        try {
-            // use selected coin as symbol to get list of mapped ids
-            return Balance.data.getJSONObject("ids").getJSONArray(Balance.SelectedCoin).length();
-        } catch (JSONException e) {}
-        return 0;
+        return Balance.NumCoinsWithSymbol(Balance.SelectedCoin);
     }
 
     @Override
     public Object getItem(int index) {
-        try {
-            // use selected coin as symbol to get list of mapped ids
-            return Balance.data.getJSONObject("ids").getJSONArray(Balance.SelectedCoin).getString(index);
-        } catch (JSONException e) {}
-        return "";
+        return Balance.GetCoinId(Balance.SelectedCoin, index);
     }
 
     @Override
@@ -165,13 +138,8 @@ class CoinSelectAdapter extends BaseAdapter {
         // get the view associated with this listview item
         View view = inflater.inflate(R.layout.list_item_coin, parent, false);
 
-        try {
-            // set the name of the coin
-            String coinName = Balance.data.getJSONObject("coins").getJSONObject(id).getString("name");
-            ((TextView) view.findViewById(R.id.coinName)).setText(coinName);
-        } catch (JSONException e) {
-            Log.e("display", e.getMessage());
-        }
+        // set the name of the coin
+        ((TextView) view.findViewById(R.id.coinName)).setText(Balance.GetCoinName(id));
 
         return view;
     }
@@ -193,6 +161,162 @@ public class Balance extends Activity {
     static boolean selectingCoin = false; // used to close the coin selector box with the back button
     //endregion
 
+    //region DATA ACCESSORS
+    public static String GetTimeFrame() {
+        try {
+            if (data.has("timeFrame")) {
+                return data.getString("timeFrame");
+            }
+        } catch (Exception e) {}
+        return "percent_change_24h"; // use 24 hour time frame by default
+    }
+
+    public static void NextTimeFrame() {
+        try {
+            String value = GetTimeFrame();
+            if (value.equals("percent_change_24h")) {
+                data.put("timeFrame", "percent_change_7d");
+            } else if (value.equals("percent_change_7d")) {
+                data.put("timeFrame", "percent_change_1h");
+            } else {
+                data.put("timeFrame", "percent_change_24h");
+            }
+        } catch (Exception e) {}
+    }
+
+    public static String GetSortBy() {
+        try {
+            if (data.has("sortBy")) {
+                return data.getString("sortBy");
+            }
+        } catch (Exception e) {}
+        return "coin"; // sort by coin by default
+    }
+
+    public static void SetSortBy(String value) {
+        try {
+            data.put("sortBy", value);
+        } catch (Exception e) {}
+    }
+
+    public static boolean GetSortDesc() {
+        try {
+            if (data.has("sortDesc")) {
+                return data.getBoolean("sortDesc");
+            }
+        } catch (Exception e) {}
+        return true; // sort desc by default
+    }
+
+    public static void SetSortDesc(boolean value) {
+        try {
+            data.put("sortDesc", value);
+        } catch (Exception e) {}
+    }
+
+    public static Date GetLastUpdate() {
+        try {
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return df.parse(data.getString("lastUpdate"));
+        } catch (Exception e) {}
+        return new Date(0); // use 1970 as default last update time
+    }
+
+    public static void SetLastUpdate() {
+        try {
+            Date now = Calendar.getInstance().getTime();
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            data.put("lastUpdate", df.format(now));
+        } catch (Exception e) {}
+    }
+
+    public static LinkedList<String> GetTrackedIds() {
+        LinkedList<String> result = new LinkedList<>();
+        try {
+            for (int i = 0; i < data.getJSONObject("trackedIds").length(); i++){
+                result.add(data.getJSONObject("trackedIds").names().getString(i));
+            }
+        } catch (Exception e) {}
+        return result;
+    }
+
+    public static void RemoveTrackedId(String id) {
+        try {
+            data.getJSONObject("trackedIds").remove(id);
+        } catch (Exception e) {}
+    }
+
+    public static int NumCoinsWithSymbol(String symbol) {
+        try {
+            return data.getJSONObject("ids").getJSONArray(symbol).length();
+        } catch (Exception e) {}
+        return 0;
+    }
+
+    public static String GetCoinId(String symbol, int index) {
+        try {
+            return data.getJSONObject("ids").getJSONArray(symbol).getString(index);
+        } catch (Exception e) {}
+        return "ERROR";
+    }
+
+    public static String GetCoinSymbol(String id) {
+        try {
+            return data.getJSONObject("coins").getJSONObject(id).getString("symbol");
+        } catch (Exception e) {}
+        return "ERROR";
+    }
+
+    public static String GetCoinName(String id) {
+        try {
+            return data.getJSONObject("coins").getJSONObject(id).getString("name");
+        } catch (Exception e) {}
+        return "ERROR";
+    }
+
+    public static Double GetCoinPrice(String id) {
+        try {
+            return data.getJSONObject("coins").getJSONObject(id).getDouble("price_usd");
+        } catch (Exception e) {}
+        return 0d;
+    }
+
+    public static Double GetCoinPriceChange(String id) {
+        try {
+            return data.getJSONObject("coins").getJSONObject(id).getDouble(GetTimeFrame());
+        } catch (Exception e) {}
+        return 0d;
+    }
+
+    public static Double GetCoinHoldings(String id) {
+        try {
+            return data.getJSONObject("trackedIds").getJSONObject(id).getDouble("holdings");
+        } catch (Exception e) {}
+        return 0d;
+    }
+
+    public static void SetCoinHoldings(String id, double holdings) {
+        try {
+            // create tracked id list if it does not exist
+            if (!data.has("trackedIds")) {
+                data.put("trackedIds", new JSONObject());
+            }
+
+            // begin tracking id if it is not already
+            if (!data.getJSONObject("trackedIds").has(id)) {
+                data.getJSONObject("trackedIds").put(id, new JSONObject());
+            }
+
+            // set holdings for id
+            data.getJSONObject("trackedIds").getJSONObject(id).put("holdings", holdings);
+        } catch (Exception e) {}
+    }
+
+    public static Double GetCoinValue(String id) {
+        return GetCoinPrice(id) * GetCoinHoldings(id);
+    }
+    //endregion
+
     //region SAVE/LOAD
     void Load() {
         try {
@@ -203,65 +327,6 @@ public class Balance extends Activity {
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 data = new JSONObject(bufferedReader.readLine());
                 inputStream.close();
-            }
-
-            // load from legacy save file format
-//            String line = "";
-//            inputStream = openFileInput("listings.txt");
-//            if ( inputStream != null ) {
-//                JSONObject trackedIds = new JSONObject();
-//                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-//                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-//                while ((line = bufferedReader.readLine()) != null) {
-//                    String[] parts = line.split(",");
-//                    String symbol = parts[1];
-//                    double holdings = Double.parseDouble(parts[3]);
-//                    String id = data.getJSONObject("ids").getJSONArray(symbol).getString(0);
-//                    JSONObject coin = new JSONObject();
-//                    coin.put("holdings", holdings);
-//                    trackedIds.put(id, coin);
-//                    DownloadIcon(id);
-//                }
-//                data.put("trackedIds", trackedIds);
-//                inputStream.close();
-//            }
-
-            // import v1.0 data if it exists
-            if (data.has("trackedCoins")) {
-                // convert tracked coins to tracked ids
-                JSONObject trackedIds = new JSONObject();
-                JSONArray symbols = data.getJSONObject("trackedCoins").names();
-                if (symbols != null) {
-                    for (int i = 0; i < symbols.length(); i++) {
-                        String symbol = symbols.getString(i);
-                        String id = data.getJSONObject("coins").getJSONObject(symbol).getString("id");
-                        JSONObject trackedInfo = data.getJSONObject("trackedCoins").getJSONObject(symbol);
-                        trackedIds.put(id, trackedInfo);
-                    }
-                }
-                data.put("trackedIds", trackedIds);
-                data.remove("trackedCoins");
-
-                // remap coin info from symbol to id
-                JSONObject coins = new JSONObject();
-                JSONArray keys = data.getJSONObject("coins").names();
-                if (keys != null) {
-                    for (int i = 0; i < keys.length(); i++) {
-                        String key = keys.getString(i);
-                        String id = data.getJSONObject("coins").getJSONObject(key).getString("id");
-                        JSONObject coinInfo = data.getJSONObject("coins").getJSONObject(key);
-                        coins.put(id, coinInfo);
-                    }
-                }
-                data.put("coins", coins);
-
-                // set defaults if nothing is set
-                if (!data.has("sortDesc")) { data.put("sortDesc", true); }
-                if (!data.has("sortBy")) { data.put("sortBy", "Coin"); }
-                if (!data.has("timeFrame")) { data.put("timeFrame", "percent_change_24h"); }
-                if (!data.has("ids")) { data.put("ids", new JSONObject()); }
-                if (!data.has("coins")) { data.put("coins", new JSONObject()); }
-                if (!data.has("trackedIds")) { data.put("trackedIds", new JSONObject()); }
             }
         }
         catch (Exception e) {
@@ -293,102 +358,72 @@ public class Balance extends Activity {
     }
 
     public void ChangeTimeFrame(View v) {
-        try {
-            String value = data.getString("timeFrame");
-            if (value.equals("percent_change_1h")) {
-                data.put("timeFrame", "percent_change_24h");
-            } else if (value.equals("percent_change_24h")) {
-                data.put("timeFrame", "percent_change_7d");
-            } else if (value.equals("percent_change_7d")) {
-                data.put("timeFrame", "percent_change_1h");
-            }
-        } catch (JSONException e) {
-            Log.d("TIMEFRAME", e.getMessage());
-        }
+        // change to the next time frame
+        NextTimeFrame();
+
+        // update the display
         UpdateDisplay();
     }
     //endregion
 
     //region SORTING
     void Sort() {
-        try {
-            trackedIds.clear();
-            JSONArray ids = Balance.data.getJSONObject("trackedIds").names();
-            if (ids == null) { return; }
-            for (int i = 0; i < ids.length(); i++) {
-                trackedIds.add(ids.getString(i));
-            }
+        // populated tracked ids list
+        trackedIds = GetTrackedIds();
 
-            Comparator comparator = new Comparator<String>() {
+        // create comparators for the sort
+        Comparator comparator = new Comparator<String>() {
+            @Override
+            public int compare(String lhs, String rhs) {
+                int result = GetCoinSymbol(rhs).compareTo(GetCoinSymbol(lhs));
+                if (GetSortDesc()) {
+                    return result * -1;
+                }
+                return result;
+            }
+        };
+        if (GetSortBy().equals("holdings")) {
+            comparator = new Comparator<String>() {
                 @Override
                 public int compare(String lhs, String rhs) {
-                    int result = 0;
-                    try {
-                        String lsymbol = data.getJSONObject("coins").getJSONObject(lhs).getString("symbol");
-                        String rsymbol = data.getJSONObject("coins").getJSONObject(rhs).getString("symbol");
-                        result = rsymbol.compareTo(lsymbol);
-                        if (data.getBoolean("sortDesc")) {
-                            return result * -1;
-                        }
-                    } catch (JSONException e) {}
+                    int result = Double.compare(GetCoinValue(lhs), GetCoinValue(rhs));
+                    if (GetSortDesc()) {
+                        result *= -1;
+                    }
                     return result;
                 }
             };
-            if (data.getString("sortBy").equals("holdings")) {
-                comparator = new Comparator<String>() {
-                    @Override
-                    public int compare(String lhs, String rhs) {
-                        int result = 0;
-                        try {
-                            double price1 = data.getJSONObject("coins").getJSONObject(lhs).getDouble("price_usd");
-                            double price2 = data.getJSONObject("coins").getJSONObject(rhs).getDouble("price_usd");
-                            double holdings1 = data.getJSONObject("trackedIds").getJSONObject(lhs).getDouble("holdings");
-                            double holdings2 = data.getJSONObject("trackedIds").getJSONObject(rhs).getDouble("holdings");
-                            double value1 = price1 * holdings1;
-                            double value2 = price2 * holdings2;
-
-                            result = Double.compare(value1, value2);
-                            if (data.getBoolean("sortDesc")) {
-                                result *= -1;
-                            }
-                        } catch (JSONException e) {}
-                        return result;
+        } else if (GetSortBy().equals("price")) {
+            comparator = new Comparator<String>() {
+                @Override
+                public int compare(String lhs, String rhs) {
+                    int result = Double.compare(GetCoinPriceChange(lhs), GetCoinPriceChange(rhs));
+                    if (GetSortDesc()) {
+                        result *= -1;
                     }
-                };
-            } else if (data.getString("sortBy").equals("price")) {
-                comparator = new Comparator<String>() {
-                    @Override
-                    public int compare(String lhs, String rhs) {
-                        int result = 0;
-                        try {
-                            String timeFrame = data.getString("timeFrame");
-                            double change1 = data.getJSONObject("coins").getJSONObject(lhs).getDouble(timeFrame);
-                            double change2 = data.getJSONObject("coins").getJSONObject(rhs).getDouble(timeFrame);
+                    return result;
+                }
+            };
+        }
 
-                            result = Double.compare(change1, change2);
-                            if (data.getBoolean("sortDesc")) {
-                                result *= -1;
-                            }
-                        } catch (JSONException e) {}
-                        return result;
-                    }
-                };
-            }
-
-            Collections.sort(trackedIds, comparator);
-        } catch (JSONException e) {}
+        // sort the track ids list
+        Collections.sort(trackedIds, comparator);
     }
 
     public void SortByValue(String value) {
-        try {
-            if (data.getString("sortBy").equals(value)) {
-                boolean sortDesc = data.getBoolean("sortDesc");
-                data.put("sortDesc", !sortDesc);
-            } else {
-                data.put("sortBy", value);
-                data.put("sortDesc", true);
-            }
-        } catch (JSONException e) {}
+        // if already sorting by this value
+        if (GetSortBy().equals(value)) {
+            // reverse the sort direction
+            SetSortDesc(!GetSortDesc());
+        }
+        // if not already sorting by the value
+        else {
+            // sort desc by the value
+            SetSortBy(value);
+            SetSortDesc(true);
+        }
+
+        // update the display
         UpdateDisplay();
     }
 
@@ -430,22 +465,10 @@ public class Balance extends Activity {
         // Close balance box
         CloseNewCoinBox();
 
-        JSONArray ids = new JSONArray();
-        try {
-            // get list of ids mapped to this symbol
-            ids = data.getJSONObject("ids").getJSONArray(symbol);
-        } catch (JSONException e) {
-            Log.e("ERROR", e.getMessage(), e);
-        }
-
         // if there is only one id mapped to this symbol then prompt for balance input
-        if (ids.length() == 1) {
+        if (NumCoinsWithSymbol(symbol) == 1) {
             // Set selected coin to the mapped id
-            try {
-                SelectedCoin = ids.getString(0);
-            } catch (JSONException e) {
-                Log.e("ERROR", e.getMessage(), e);
-            }
+            SelectedCoin = GetCoinId(symbol, 0);
 
             // download the icon for this coin id
             DownloadIcon(SelectedCoin);
@@ -454,7 +477,7 @@ public class Balance extends Activity {
             OpenBalanceInputBox();
         }
         // if there is more than one mapped id with this symbol
-        else {
+        else if (NumCoinsWithSymbol(symbol) > 1) {
             // set selected coin to the provided symbol
             SelectedCoin = symbol;
 
@@ -520,25 +543,20 @@ public class Balance extends Activity {
     //region BALANCE INPUT
     public void OpenBalanceInputBox() {
         // set the edit title and erase the balance input text
-        try {
-            String coinName = data.getJSONObject("coins").getJSONObject(SelectedCoin).getString("name");
-            ((TextView) findViewById(R.id.editTitle)).setText("Enter " + coinName + " Holdings");
-            ((TextView) findViewById(R.id.balanceInput)).setText("");
+        ((TextView) findViewById(R.id.editTitle)).setText("Enter " + GetCoinName(SelectedCoin) + " Holdings");
+        ((TextView) findViewById(R.id.balanceInput)).setText("");
 
-            // disable input
-            ToggleInput(false);
+        // disable input
+        ToggleInput(false);
 
-            // show the edit box
-            findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.VISIBLE);
+        // show the edit box
+        findViewById(R.id.editBalanceBox).setVisibility(FrameLayout.VISIBLE);
 
-            // show keyboard for balance input
-            EditText editText = (EditText) findViewById(R.id.balanceInput);
-            editText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
-        } catch (JSONException e) {
-            Log.e("ERROR", e.getMessage(), e);
-        }
+        // show keyboard for balance input
+        EditText editText = (EditText) findViewById(R.id.balanceInput);
+        editText.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
     }
 
     public void DeleteSelected(View v) {
@@ -549,12 +567,12 @@ public class Balance extends Activity {
         }
 
         // remove from tracked coins list
-        try {
-            data.getJSONObject("trackedIds").remove(SelectedCoin);
-        } catch (JSONException e) {}
+        RemoveTrackedId(SelectedCoin);
 
+        // close the edit box
         CloseBalanceEditBox();
 
+        // update the display
         UpdateDisplay();
     }
 
@@ -566,20 +584,11 @@ public class Balance extends Activity {
         CloseBalanceEditBox();
 
         // add the holdings input to the previous holdings
-        try {
-            double prevHoldings = 0;
-            if (data.getJSONObject("trackedIds").has(SelectedCoin)) {
-                prevHoldings = data.getJSONObject("trackedIds").getJSONObject(SelectedCoin).getDouble("holdings");
-            }
+        double prevHoldings = GetCoinHoldings(SelectedCoin);
+        double newHoldings = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
 
-            double newHoldings = (balance.isEmpty()) ? 0 : Double.parseDouble(balance);
-
-            JSONObject coin = new JSONObject();
-            coin.put("holdings", prevHoldings + newHoldings);
-            data.getJSONObject("trackedIds").put(SelectedCoin, coin);
-        } catch (JSONException e) {
-            Log.e("ERROR", e.getMessage(), e);
-        }
+        // set holdings for selected coin
+        SetCoinHoldings(SelectedCoin, prevHoldings + newHoldings);
 
         // update listings display
         UpdateDisplay();
@@ -647,7 +656,7 @@ public class Balance extends Activity {
                         fos.close();
                     }
                 } catch (Exception e) {
-                    Log.e("Failed to download icon", e.getMessage());
+                    Log.e("Failed to download icon", e.getMessage(), e);
                 }
                 return null;
             }
@@ -675,18 +684,13 @@ public class Balance extends Activity {
     }
 
     boolean ShouldUpdate() {
-        try {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date last_update = df.parse(data.getString("lastUpdate"));
-            Date next_update = new Date(last_update.getTime() + updateDelay);
-            Date now = Calendar.getInstance().getTime();
-            if (now.after(next_update)) {
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
+        Date last_update = GetLastUpdate();
+        Date next_update = new Date(last_update.getTime() + updateDelay);
+        Date now = Calendar.getInstance().getTime();
+        if (now.after(next_update)) {
             return true;
         }
+        return false;
     }
 
     void Update() {
@@ -703,7 +707,7 @@ public class Balance extends Activity {
             refreshButton.startAnimation(anim);
 
             // record the time of this update so we know when to update next
-            RecordUpdateTime();
+            SetLastUpdate();
 
             // perform update in the background
             new AsyncTask<Void, Void, Void>() {
@@ -759,92 +763,74 @@ public class Balance extends Activity {
         }
     }
 
-    void RecordUpdateTime() {
-        try {
-            Date now = Calendar.getInstance().getTime();
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            data.put("lastUpdate", df.format(now));
-        } catch (JSONException e) {
-            Log.e("Update Time", e.getMessage());
-        }
-    }
-
     void UpdateDisplay() {
-        try {
-            // save data
-            Save();
+        // save data
+        Save();
 
-            // build a sorted list of tracked symbols for displaying
-            Sort();
+        // build a sorted list of tracked symbols for displaying
+        Sort();
 
-            // update sort arrows
-            TextView coinHeader = (TextView) findViewById(R.id.sortCoinButton);
-            TextView holdingsHeader = (TextView) findViewById(R.id.sortHoldingsButton);
-            TextView priceHeader = (TextView) findViewById(R.id.sortPriceButton);
-            coinHeader.setText("Coin");
-            holdingsHeader.setText("Holdings");
-            priceHeader.setText("Price");
-            String arrow = (data.getBoolean("sortDesc")) ? "↓" : "↑";
-            if (data.getString("sortBy").equals("coin")) {
-                coinHeader.setText("Coin" + arrow);
-            } else if (data.getString("sortBy").equals("holdings")) {
-                holdingsHeader.setText("Holdings" + arrow);
-            } else if (data.getString("sortBy").equals("price")) {
-                priceHeader.setText("Price" + arrow);
+        // update sort arrows
+        TextView coinHeader = (TextView) findViewById(R.id.sortCoinButton);
+        TextView holdingsHeader = (TextView) findViewById(R.id.sortHoldingsButton);
+        TextView priceHeader = (TextView) findViewById(R.id.sortPriceButton);
+        coinHeader.setText("Coin");
+        holdingsHeader.setText("Holdings");
+        priceHeader.setText("Price");
+        String arrow = (GetSortDesc()) ? "↓" : "↑";
+        if (GetSortBy().equals("coin")) {
+            coinHeader.setText("Coin" + arrow);
+        } else if (GetSortBy().equals("holdings")) {
+            holdingsHeader.setText("Holdings" + arrow);
+        } else if (GetSortBy().equals("price")) {
+            priceHeader.setText("Price" + arrow);
+        }
+
+        // Update total value and previous value (used for percent change)
+        double totalValue = 0;
+        double previousValue = 0;
+        for (int i = 0; i < trackedIds.size(); i++) {
+            String id = trackedIds.get(i);
+            totalValue += GetCoinValue(id);
+
+            // exclude coins that lost 100% of their value from portfolio price change calculation
+            if (GetCoinPriceChange(id) != -100d) {
+                previousValue += GetCoinValue(id) / (1 + (GetCoinPriceChange(id) / 100));
             }
+        }
+        ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
 
-            // Update total value and previous value (used for percent change)
-            double totalValue = 0;
-            double previousValue = 0;
-            String timeFrame = data.getString("timeFrame");
-            JSONArray ids = data.getJSONObject("trackedIds").names();
-            if (ids != null) {
-                for (int i = 0; i < ids.length(); i++) {
-                    String id = ids.getString(i);
-                    double holdings = data.getJSONObject("trackedIds").getJSONObject(id).getDouble("holdings");
-                    double price = data.getJSONObject("coins").getJSONObject(id).getDouble("price_usd");
-                    double change = data.getJSONObject("coins").getJSONObject(id).getDouble(timeFrame);
+        // Update change title
+        String changeTitle = "24hr Change";
+        if (GetTimeFrame().equals("percent_change_1h")) {
+            changeTitle = "1hr Change";
+        } else if (GetTimeFrame().equals("percent_change_7d")) {
+            changeTitle = "7d Change";
+        }
+        ((TextView) findViewById(R.id.changeTitle)).setText(changeTitle);
 
-                    totalValue += price * holdings;
-                    previousValue += price * holdings / (1 + (change / 100));
-                }
-            }
-            ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
+        // Update change value
+        TextView changeText = (TextView) findViewById(R.id.change);
+        double percentChange = (previousValue == 0) ? 0 : 100 * (totalValue - previousValue) / previousValue;
+        if (percentChange > 0) {
+            changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
+            changeText.setTextColor(Color.rgb(0, 150, 0));
+        } else if (percentChange < 0) {
+            changeText.setText(String.format("%1$,.2f", percentChange) + "%");
+            changeText.setTextColor(Color.RED);
+        } else {
+            changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
+            changeText.setTextColor(Color.BLACK);
+        }
 
-            // Update change title
-            String changeTitle = "1hr Change";
-            if (data.getString("timeFrame").equals("percent_change_24h")) {
-                changeTitle = "24hr Change";
-            } else if (data.getString("timeFrame").equals("percent_change_7d")) {
-                changeTitle = "7d Change";
-            }
-            ((TextView) findViewById(R.id.changeTitle)).setText(changeTitle);
-
-            // Update change value
-            TextView changeText = (TextView) findViewById(R.id.change);
-            double percentChange = (previousValue == 0) ? 0 : 100 * (totalValue - previousValue) / previousValue;
-            if (percentChange > 0) {
-                changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
-                changeText.setTextColor(Color.rgb(0, 150, 0));
-            } else if (percentChange < 0) {
-                changeText.setText(String.format("%1$,.2f", percentChange) + "%");
-                changeText.setTextColor(Color.RED);
-            } else {
-                changeText.setText("+" + String.format("%1$,.2f", percentChange) + "%");
-                changeText.setTextColor(Color.BLACK);
-            }
-
-            // set portfolio change arrow
-            ImageView portfolioArrow = (ImageView) findViewById(R.id.portfolioChangeArrow);
-            if (percentChange < 0) {
-                portfolioArrow.setImageResource(R.drawable.arrow_red);
-            } else if (percentChange > 0){
-                portfolioArrow.setImageResource(R.drawable.arrow_green);
-            } else {
-                portfolioArrow.setImageResource(R.drawable.dash);
-            }
-        } catch (Exception e) {
-            Log.e("UpdateDisplay", e.getMessage(), e);
+        // set portfolio change arrow
+        ImageView portfolioArrow = (ImageView) findViewById(R.id.portfolioChangeArrow);
+        if (percentChange < 0) {
+            portfolioArrow.setImageResource(R.drawable.arrow_red);
+        } else if (percentChange > 0) {
+            portfolioArrow.setImageResource(R.drawable.arrow_green);
+        } else {
+            portfolioArrow.setImageResource(R.drawable.dash);
         }
 
         // update list views

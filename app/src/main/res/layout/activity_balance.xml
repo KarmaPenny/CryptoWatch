@@ -325,7 +325,7 @@
             android:textColor="@color/text_header"
             android:textSize="15sp"
             android:paddingLeft="15dp"
-            android:background="#555555" />
+            android:background="@color/primary" />
 
         <ListView
             android:layout_width="fill_parent"
