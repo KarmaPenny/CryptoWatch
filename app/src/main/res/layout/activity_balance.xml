@@ -75,7 +75,8 @@
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:id="@+id/portfolioValue">
+            android:id="@+id/portfolioValue"
+            android:onClick="OpenCurrencyBox">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -225,6 +226,39 @@
         android:background="#8f7f7f7f"
         android:visibility="gone"
         android:id="@+id/greyOverlay"></RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#ffffff"
+        android:id="@+id/setCurrencyBox"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:id="@+id/setCurrencyTitle"
+            android:padding="10dp"
+            android:background="@color/primary"
+            android:textColor="#ffffff"
+            android:text="@string/enter_currency" />
+
+        <com.colerobinette.cryptowatch.BalanceEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/currencyInput"
+            android:maxLines="1"
+            android:gravity="center_vertical|right"
+            android:textSize="40sp"
+            android:paddingRight="20dp"
+            android:paddingLeft="20dp"
+            android:imeOptions="actionDone"
+            android:textColor="@color/text_primary"
+            android:layout_below="@+id/setCurrencyTitle"
+            android:inputType="textNoSuggestions|textCapCharacters" />
+    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"

@@ -38,7 +38,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 class BalanceAdapter extends BaseAdapter {
     private LayoutInflater inflater;
@@ -82,10 +84,10 @@ class BalanceAdapter extends BaseAdapter {
         ((ImageView) view.findViewById(R.id.coinIcon)).setImageURI(uri);
 
         // set the price text
-        ((TextView) view.findViewById(R.id.coinPrice)).setText("$" + String.format("%1$,.2f", Balance.GetCoinPrice(id)));
+        ((TextView) view.findViewById(R.id.coinPrice)).setText(Balance.GetCurrencySign() + String.format("%1$,.2f", Balance.GetCoinPrice(id)));
 
         // set the value of the holdings text
-        ((TextView) view.findViewById(R.id.coinValue)).setText("$" + String.format("%1$,.2f", Balance.GetCoinValue(id)));
+        ((TextView) view.findViewById(R.id.coinValue)).setText(Balance.GetCurrencySign() + String.format("%1$,.2f", Balance.GetCoinValue(id)));
 
         // set the percent changed text
         double change = Balance.GetCoinPriceChange(id);
@@ -161,6 +163,8 @@ public class Balance extends Activity {
     static boolean selectingCoin = false; // used to close the coin selector box with the back button
 
     static boolean addToExistingBalance = false;
+
+    static Map<String, String> currencies = new HashMap<>();
     //endregion
 
     //region DATA ACCESSORS
@@ -199,6 +203,28 @@ public class Balance extends Activity {
         try {
             data.put("sortBy", value);
         } catch (Exception e) {}
+    }
+
+    public static String GetCurrency() {
+        try {
+            if (data.has("currencyCode")) {
+                return data.getString("currencyCode");
+            }
+        } catch (Exception e) {}
+        return "USD"; // use USD by default
+    }
+
+    public static void SetCurrency(String value) {
+        try {
+            data.put("currencyCode", value);
+        } catch (Exception e) {}
+    }
+
+    public static String GetCurrencySign() {
+        if (currencies.containsKey(GetCurrency())) {
+            return currencies.get(GetCurrency());
+        }
+        return "";
     }
 
     public static boolean GetSortDesc() {
@@ -278,7 +304,7 @@ public class Balance extends Activity {
 
     public static Double GetCoinPrice(String id) {
         try {
-            return data.getJSONObject("coins").getJSONObject(id).getDouble("price_usd");
+            return data.getJSONObject("coins").getJSONObject(id).getDouble("price_" + GetCurrency().toLowerCase());
         } catch (Exception e) {}
         return 0d;
     }
@@ -353,6 +379,51 @@ public class Balance extends Activity {
     public void OpenReadme(View v) {
         Intent intent= new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/KarmaPenny/CryptoWatch/blob/master/README.md"));
         startActivity(intent);
+    }
+
+    public void OpenCurrencyBox(View v) {
+        // set the edit title and erase the balance input text
+        ((TextView) findViewById(R.id.currencyInput)).setText("");
+
+        // disable input
+        ToggleInput(false);
+
+        // show the edit box
+        findViewById(R.id.setCurrencyBox).setVisibility(FrameLayout.VISIBLE);
+
+        // show keyboard for balance input
+        EditText editText = (EditText) findViewById(R.id.currencyInput);
+        editText.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    public void ChangeCurrency() {
+        // get currency from input box
+        String currency = ((TextView) findViewById(R.id.currencyInput)).getText().toString();
+
+        // Close balance box
+        CloseCurrencyBox();
+
+        // update the currency
+        SetCurrency(currency);
+
+        // update listings
+        Update();
+    }
+
+    public void CloseCurrencyBox() {
+        // close keyboard
+        EditText editText = (EditText) findViewById(R.id.currencyInput);
+        editText.clearFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+
+        // hide the edit box
+        findViewById(R.id.setCurrencyBox).setVisibility(FrameLayout.GONE);
+
+        // enable input again
+        ToggleInput(true);
     }
 
     public void Refresh(View v) {
@@ -733,7 +804,7 @@ public class Balance extends Activity {
                 protected Void doInBackground(Void... params) {
                     try {
                         // download all coin info from coinmarketcap.com
-                        URL url = new URL("https://api.coinmarketcap.com/v1/ticker/?limit=0");
+                        URL url = new URL("https://api.coinmarketcap.com/v1/ticker/?convert=" + GetCurrency() + "&limit=0");
                         InputStream inputStream = url.openStream();
                         BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
                         StringBuilder jsonBuilder = new StringBuilder("");
@@ -818,6 +889,11 @@ public class Balance extends Activity {
         }
         ((TextView) findViewById(R.id.valueTotal)).setText(String.format("%1$,.2f", totalValue));
 
+        // Update portfolio title
+        String portfolioTitle = "Total Portfolio Value (" + GetCurrency() + ")";
+        ((TextView) findViewById(R.id.portfolioValueTitle)).setText(portfolioTitle);
+        ((TextView) findViewById(R.id.smallDollarSign)).setText(GetCurrencySign());
+
         // Update change title
         String changeTitle = "24hr Change";
         if (GetTimeFrame().equals("percent_change_1h")) {
@@ -870,6 +946,40 @@ public class Balance extends Activity {
         actContext = this;
         setContentView(R.layout.activity_balance);
 
+        // initialize currencies mappings
+        currencies.put("USD", "$");
+        currencies.put("AUD", "$");
+        currencies.put("BRL", "R$");
+        currencies.put("CAD", "$");
+        currencies.put("CHF", "");
+        currencies.put("CLP", "$");
+        currencies.put("CNY", "¥");
+        currencies.put("CZK", "Kč");
+        currencies.put("DKK", "kr");
+        currencies.put("EUR", "€");
+        currencies.put("GBP", "£");
+        currencies.put("HKD", "$");
+        currencies.put("HUF", "Ft");
+        currencies.put("IDR", "Rp");
+        currencies.put("ILS", "₪");
+        currencies.put("INR", "₹");
+        currencies.put("JPY", "¥");
+        currencies.put("KRW", "₩");
+        currencies.put("MXN", "$");
+        currencies.put("MYR", "RM");
+        currencies.put("NOK", "kr");
+        currencies.put("NZD", "$");
+        currencies.put("PHP", "₱");
+        currencies.put("PKR", "₨");
+        currencies.put("PLN", "zł");
+        currencies.put("RUB", "\u20BD");
+        currencies.put("SEK", "kr");
+        currencies.put("SGD", "$");
+        currencies.put("THB", "฿");
+        currencies.put("TRY", "₺");
+        currencies.put("TWD", "$");
+        currencies.put("ZAR", "R");
+
         // load data from file
         Load();
 
@@ -910,6 +1020,30 @@ public class Balance extends Activity {
         });
 
         coinListView.setAdapter(coinSelectAdapter);
+
+        // setup currency box
+        BalanceEditText currencyInput = (BalanceEditText) findViewById(R.id.currencyInput);
+
+        // save balance and close input box when submit is pressed on keyboard
+        currencyInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    ChangeCurrency();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        currencyInput.setKeyImeChangeListener(new BalanceEditText.KeyImeChange() {
+            @Override
+            public void onKeyIme(int keyCode, KeyEvent event) {
+                if (KeyEvent.KEYCODE_BACK == event.getKeyCode()) {
+                    CloseCurrencyBox();
+                }
+            }
+        });
 
         // setup edit box
         BalanceEditText balanceInput = (BalanceEditText) findViewById(R.id.balanceInput);
