@@ -31,6 +31,12 @@ CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfo
 
 2.) Press the trash button.
 
+### Change Currency
+
+1.) Click on the total portfolio value.
+
+2.) Enter a currency code (e.g. USD, EUR, JPY, etc.)
+
 ### View Coin Info
 
 Click on a coin to goto it's coinmarketcap.com webpage
