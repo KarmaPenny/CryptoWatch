@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.0"
+    buildToolsVersion '25.0.0'
 
     defaultConfig {
         applicationId "com.colerobinette.cryptowatch"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 9
-        versionName "1.4"
+        versionCode 10
+        versionName "1.4.1"
     }
     buildTypes {
         release {

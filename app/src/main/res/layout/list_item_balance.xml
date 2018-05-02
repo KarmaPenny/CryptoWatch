@@ -53,7 +53,7 @@
         android:layout_toEndOf="@+id/coinIcon" />
 
     <TextView
-        android:layout_width="140dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:text="@string/loading_message"
         android:id="@+id/coinPrice"
@@ -63,7 +63,7 @@
         android:layout_alignEnd="@+id/percentChange" />
 
     <TextView
-        android:layout_width="140dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:text="@string/loading_message"
         android:id="@+id/percentChange"

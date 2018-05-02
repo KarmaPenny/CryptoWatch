@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -304,14 +305,14 @@ public class Balance extends Activity {
 
     public static Double GetCoinPrice(String id) {
         try {
-            return data.getJSONObject("coins").getJSONObject(id).getDouble("price_" + GetCurrency().toLowerCase());
+            return data.getJSONObject("coins").getJSONObject(id).getJSONObject("quotes").getJSONObject(GetCurrency()).getDouble("price");
         } catch (Exception e) {}
         return 0d;
     }
 
     public static Double GetCoinPriceChange(String id) {
         try {
-            return data.getJSONObject("coins").getJSONObject(id).getDouble(GetTimeFrame());
+            return data.getJSONObject("coins").getJSONObject(id).getJSONObject("quotes").getJSONObject(GetCurrency()).getDouble(GetTimeFrame());
         } catch (Exception e) {}
         return 0d;
     }
@@ -721,6 +722,7 @@ public class Balance extends Activity {
     }
 
     void DownloadIcon(final String id) {
+        Log.d("DOWNLOAD ICON", "id = " + id);
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -728,7 +730,7 @@ public class Balance extends Activity {
                     // download the icon if we do not already have a copy
                     File file = new File(Balance.actContext.getApplicationInfo().dataDir + "/" + id + ".png");
                     if (!file.exists()) {
-                        URL iconUrl = new URL("https://files.coinmarketcap.com/static/img/coins/128x128/" + id + ".png");
+                        URL iconUrl = new URL("https://s2.coinmarketcap.com/static/img/coins/128x128/" + id + ".png");
                         InputStream in = new BufferedInputStream(iconUrl.openStream());
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         byte[] buf = new byte[1024];
@@ -804,7 +806,7 @@ public class Balance extends Activity {
                 protected Void doInBackground(Void... params) {
                     try {
                         // download all coin info from coinmarketcap.com
-                        URL url = new URL("https://api.coinmarketcap.com/v1/ticker/?convert=" + GetCurrency() + "&limit=0");
+                        URL url = new URL("https://api.coinmarketcap.com/v2/ticker/?convert=" + GetCurrency() + "&limit=0");
                         InputStream inputStream = url.openStream();
                         BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
                         StringBuilder jsonBuilder = new StringBuilder("");
@@ -812,17 +814,20 @@ public class Balance extends Activity {
                         while ((line = in.readLine()) != null) {
                             jsonBuilder.append(line);
                         }
-                        JSONObject result = new JSONObject("{\"coins\":" + jsonBuilder.toString() + "}");
+                        JSONObject result = new JSONObject(jsonBuilder.toString());
                         in.close();
 
                         // add coin info to coin data
-                        JSONArray coinsInfo = result.getJSONArray("coins");
+                        JSONObject coinsInfo = result.getJSONObject("data");
                         JSONObject ids = new JSONObject(); // map each symbol to list of ids
                         JSONObject coinsData = new JSONObject();
-                        for (int i = 0; i < coinsInfo.length(); i++) {
+                        Iterator<String> keys = coinsInfo.keys();
+                        while (keys.hasNext()){
+                            String key = keys.next();
+
                             // add coin info to coins map using id
-                            JSONObject coinInfo = coinsInfo.getJSONObject(i);
-                            coinsData.put(coinInfo.getString("id"), coinInfo);
+                            JSONObject coinInfo = coinsInfo.getJSONObject(key);
+                            coinsData.put(key, coinInfo);
 
                             // get the symbol of this coin
                             String coinSymbol = coinInfo.getString("symbol");
@@ -833,7 +838,7 @@ public class Balance extends Activity {
                             }
 
                             // add this coin's id to the symbol map
-                            ids.getJSONArray(coinSymbol).put(coinInfo.getString("id"));
+                            ids.getJSONArray(coinSymbol).put(key);
                         }
                         data.put("ids", ids);
                         data.put("coins", coinsData);
