@@ -806,40 +806,55 @@ public class Balance extends Activity {
                 protected Void doInBackground(Void... params) {
                     try {
                         // download all coin info from coinmarketcap.com
-                        URL url = new URL("https://api.coinmarketcap.com/v2/ticker/?convert=" + GetCurrency() + "&limit=0");
-                        InputStream inputStream = url.openStream();
-                        BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-                        StringBuilder jsonBuilder = new StringBuilder("");
-                        String line;
-                        while ((line = in.readLine()) != null) {
-                            jsonBuilder.append(line);
-                        }
-                        JSONObject result = new JSONObject(jsonBuilder.toString());
-                        in.close();
-
-                        // add coin info to coin data
-                        JSONObject coinsInfo = result.getJSONObject("data");
+                        int start = 1;
                         JSONObject ids = new JSONObject(); // map each symbol to list of ids
-                        JSONObject coinsData = new JSONObject();
-                        Iterator<String> keys = coinsInfo.keys();
-                        while (keys.hasNext()){
-                            String key = keys.next();
+                        JSONObject coinsData = new JSONObject(); // collect all coin data
 
-                            // add coin info to coins map using id
-                            JSONObject coinInfo = coinsInfo.getJSONObject(key);
-                            coinsData.put(key, coinInfo);
+                        while (true) {
+                            try {
+                                URL url = new URL("https://api.coinmarketcap.com/v2/ticker/?convert=" + GetCurrency() + "&limit=100&start=" + start);
+                                InputStream inputStream = url.openStream();
+                                BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+                                StringBuilder jsonBuilder = new StringBuilder("");
+                                String line;
+                                while ((line = in.readLine()) != null) {
+                                    jsonBuilder.append(line);
+                                }
+                                JSONObject result = new JSONObject(jsonBuilder.toString());
+                                in.close();
 
-                            // get the symbol of this coin
-                            String coinSymbol = coinInfo.getString("symbol");
+                                // no more data so stop
+                                if (result.isNull("data")) {
+                                    break;
+                                }
 
-                            // create list in symbols map if this symbol is not already in it
-                            if (!ids.has(coinSymbol)) {
-                                ids.put(coinSymbol, new JSONArray());
-                            }
+                                // add coin info to coin data
+                                JSONObject coinsInfo = result.getJSONObject("data");
+                                Iterator<String> keys = coinsInfo.keys();
+                                while (keys.hasNext()) {
+                                    String key = keys.next();
 
-                            // add this coin's id to the symbol map
-                            ids.getJSONArray(coinSymbol).put(key);
+                                    // add coin info to coins map using id
+                                    JSONObject coinInfo = coinsInfo.getJSONObject(key);
+                                    coinsData.put(key, coinInfo);
+
+                                    // get the symbol of this coin
+                                    String coinSymbol = coinInfo.getString("symbol");
+
+                                    // create list in symbols map if this symbol is not already in it
+                                    if (!ids.has(coinSymbol)) {
+                                        ids.put(coinSymbol, new JSONArray());
+                                    }
+
+                                    // add this coin's id to the symbol map
+                                    ids.getJSONArray(coinSymbol).put(key);
+                                }
+
+                                // increment page start
+                                start += 100;
+                            } catch (Exception e) { break; }
                         }
+
                         data.put("ids", ids);
                         data.put("coins", coinsData);
                     } catch (Exception e) {
