@@ -303,6 +303,13 @@ public class Balance extends Activity {
         return "ERROR";
     }
 
+    public static String GetCoinWebsiteSlug(String id) {
+        try {
+            return data.getJSONObject("coins").getJSONObject(id).getString("website_slug");
+        } catch (Exception e) {}
+        return "ERROR";
+    }
+
     public static Double GetCoinPrice(String id) {
         try {
             return data.getJSONObject("coins").getJSONObject(id).getJSONObject("quotes").getJSONObject(GetCurrency()).getDouble("price");
@@ -700,7 +707,8 @@ public class Balance extends Activity {
     //endregion
 
     public void LookupSelected() {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://coinmarketcap.com/currencies/" + SelectedCoin));
+        String webSlug = GetCoinWebsiteSlug(SelectedCoin);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://coinmarketcap.com/currencies/" + webSlug));
         startActivity(intent);
     }
 
