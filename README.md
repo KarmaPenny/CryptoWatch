@@ -1,5 +1,5 @@
 # CryptoWatch
-CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfolio.
+CryptoWatch uses coinbase.com and binance.com to track the value of your crypto coin portfolio.
 
 ## Usage
 
@@ -7,7 +7,7 @@ CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfo
 
 1.) Click the plus icon in the top right corner to add a coin to your portfolio.
 
-2.) Enter the symbol of the coin as it appears on coinmarketcap.com.
+2.) Enter the symbol of the coin as it appears on binance.com.
 
 3.) Set your holdings for the new coin.
 
@@ -21,7 +21,7 @@ CryptoWatch uses coinmarketcap.com to track the value of your crypto coin portfo
 
 1.) Click the plus icon in the top right corner to add a coin to your portfolio.
 
-2.) Enter the symbol of the coin as it appears on coinmarketcap.com.
+2.) Enter the symbol of the coin as it appears on binance.com.
 
 3.) Enter the amount to add to holdings. (Negative values subtract)
 
@@ -45,10 +45,6 @@ Click on a coin to goto it's coinmarketcap.com webpage
 
 Click on the column headers to sort by coin, holdings or price change.
 
-### Change Time Frame
-
-Click on the total portfolio change percentage to change the time frame.
-
 ### Refresh Price Info
 
-Price info is updated automatically every minute but if you are feeling impatient you can press the refresh button in the top right corner to refresh all price info manually.
+Price info is updated automatically every five minutes but if you are feeling impatient you can press the refresh button in the top right corner to refresh all price info manually. WARNING: updating too frequently may cause coinbase or binance to temporarily ban your IP address.
